@@ -1,3 +1,6 @@
+import Profile from './molecules/Profile';
+import SearchBar from './molecules/SearchBar';
+
 // components/Navbar.jsx
 export default function Navbar() {
   return (
@@ -16,43 +19,22 @@ export default function Navbar() {
         id="navbar-collapse"
       >
         <div className="navbar-nav align-items-center">
-          <div className="nav-item d-flex align-items-center">
-            <i className="bx bx-search bx-md"></i>
-            <input
-              type="text"
-              className="form-control border-0 shadow-none ps-1 ps-sm-2"
-              placeholder="Search..."
-              aria-label="Search..."
-            />
-          </div>
+          <SearchBar />
         </div>
 
         <ul className="navbar-nav flex-row align-items-center ms-auto">
           <li className="nav-item navbar-dropdown dropdown-user dropdown">
             <a
               className="nav-link dropdown-toggle hide-arrow p-0"
-              href="javascript:void(0);"
               data-bs-toggle="dropdown"
             >
-              <div className="avatar avatar-online">
-                <img
-                  src="../assets/img/avatars/1.png"
-                  className="w-px-40 h-auto rounded-circle"
-                />
-              </div>
+              <Profile />
             </a>
             <ul className="dropdown-menu dropdown-menu-end">
               <li>
                 <a className="dropdown-item" href="#">
                   <div className="d-flex">
-                    <div className="flex-shrink-0 me-3">
-                      <div className="avatar avatar-online">
-                        <img
-                          src="../assets/img/avatars/1.png"
-                          className="w-px-40 h-auto rounded-circle"
-                        />
-                      </div>
-                    </div>
+                    <div className="flex-shrink-0 me-3"></div>
                     <div className="flex-grow-1">
                       <h6 className="mb-0">John Doe</h6>
                       <small className="text-muted">Admin</small>
@@ -92,7 +74,7 @@ export default function Navbar() {
                 <div className="dropdown-divider my-1"></div>
               </li>
               <li>
-                <a className="dropdown-item" href="javascript:void(0);">
+                <a className="dropdown-item">
                   <i className="bx bx-power-off bx-md me-3"></i>
                   <span>Log Out</span>
                 </a>
