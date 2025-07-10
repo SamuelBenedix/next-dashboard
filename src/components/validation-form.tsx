@@ -29,11 +29,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
 const FormSchema = z.object({
-  pin: z.string().min(6, {
-    message: 'Your one-time password must be 6 characters.',
-  }),
+  pin: z
+    .string()
+    .regex(new RegExp(REGEXP_ONLY_DIGITS), {
+      message: 'PIN must be digits only',
+    })
+    .length(6, { message: 'PIN must be 6 digits' }),
 });
 
 const correctPin = '123456';
@@ -184,7 +188,16 @@ export function ValidationForm({
                   return (
                     <FormItem className="w-full max-w-md flex flex-col items-center space-y-4">
                       <FormControl>
-                        <InputOTP maxLength={6} {...field}>
+                        <InputOTP
+                          maxLength={6}
+                          {...field}
+                          type="tel"
+                          inputMode="numeric"
+                          pattern={REGEXP_ONLY_DIGITS} // optional, improves browser filtering
+                          pasteTransformer={(pasted) =>
+                            pasted.replace(/\D/g, '')
+                          }
+                        >
                           <InputOTPGroup className="flex gap-3 justify-center">
                             {[0, 1, 2, 3, 4, 5].map((index) => (
                               <InputOTPSlot
