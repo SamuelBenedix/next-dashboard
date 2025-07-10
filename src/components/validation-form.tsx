@@ -20,7 +20,15 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useEffect, useState } from 'react';
-import { Button } from './ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const FormSchema = z.object({
   pin: z.string().min(6, {
@@ -35,6 +43,7 @@ export function ValidationForm({
   ...props
 }: React.ComponentProps<'div'>) {
   const [showModal, setShowModal] = useState(false);
+  const [showDanger, setShowDanger] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(5 * 60); // 4m 13s
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -102,6 +111,12 @@ export function ValidationForm({
 
     return () => subscription.unsubscribe();
   }, [form]);
+
+  useEffect(() => {
+    if (secondsLeft === 0) {
+      setShowDanger(true); // ✅ trigger modal
+    }
+  }, [secondsLeft]);
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -218,17 +233,87 @@ export function ValidationForm({
         </CardContent>
       </Card>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-96 text-center">
-            <h2 className="text-xl font-semibold mb-4">OTP Verified</h2>
-            <p className="mb-4">Your one-time password is correct.</p>
-            <Button className="w-full" onClick={() => setShowModal(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      <AlertDialog open={showModal} onOpenChange={setShowModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            {/* ✅ Optional Success Icon */}
+            <div className="mx-auto  flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <svg
+                className="h-6 w-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+
+            <AlertDialogTitle className="text-green-700 text-lg font-semibold text-center">
+              Success
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="text-gray-600 text-center">
+              Your operation has been completed successfully.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => setShowModal(false)}
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showDanger} onOpenChange={setShowDanger}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg
+                className="h-6 w-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+
+            <AlertDialogTitle className="text-red-700 text-lg font-semibold text-center">
+              OTP Expired
+            </AlertDialogTitle>
+
+            <AlertDialogDescription className="text-gray-600 text-center">
+              Your one-time password has expired. Please request a new one.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                setShowDanger(false);
+                setSecondsLeft(5 * 60);
+              }}
+            >
+              Resend OTP
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
