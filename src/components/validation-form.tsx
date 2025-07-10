@@ -221,7 +221,7 @@ export function ValidationForm({
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96 text-center">
-            <h2 className="text-xl font-semibold mb-4">PIN Verified</h2>
+            <h2 className="text-xl font-semibold mb-4">OTP Verified</h2>
             <p className="mb-4">Your one-time password is correct.</p>
             <Button className="w-full" onClick={() => setShowModal(false)}>
               Close
