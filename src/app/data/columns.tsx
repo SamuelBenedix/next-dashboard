@@ -2,7 +2,7 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Trash2Icon, EyeIcon } from 'lucide-react';
+import { Trash2Icon, EyeIcon, ArrowUpDown, Edit2Icon } from 'lucide-react';
 
 // You can use a Zod schema here if you want.
 export type Payment = {
@@ -25,12 +25,32 @@ export const getColumns = ({
 }: ColumnActions): ColumnDef<Payment>[] => [
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => <div>{row.original.status}</div>,
   },
   {
     accessorKey: 'amount',
-    header: 'Amount',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => <div>${row.original.amount}</div>,
   },
   {
@@ -41,6 +61,16 @@ export const getColumns = ({
 
       return (
         <div className="flex items-center justify-center gap-2">
+          {/* Add Button */}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="size-8"
+            onClick={() => onAdd(payment)}
+          >
+            <Edit2Icon className="w-4 h-4 text-green-600" />
+          </Button>
+
           {/* View Button */}
           <Button
             variant="secondary"
@@ -49,16 +79,6 @@ export const getColumns = ({
             onClick={() => onView(payment)}
           >
             <EyeIcon className="w-4 h-4 text-blue-600" />
-          </Button>
-
-          {/* Add Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="size-8"
-            onClick={() => onAdd(payment)}
-          >
-            <PlusIcon className="w-4 h-4 text-green-600" />
           </Button>
 
           {/* Delete Button */}

@@ -1,10 +1,4 @@
 'use client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 import { DataTable } from './dataTable';
 import { getColumns } from './columns';
@@ -17,6 +11,20 @@ type Payment = {
   status: 'pending' | 'processing' | 'success' | 'failed';
   email: string;
 };
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PlusIcon } from 'lucide-react';
 
 const data: Payment[] = [
   {
@@ -77,21 +85,48 @@ export default function DataPage() {
   return (
     <AppLayout
       breadcrumb={{
-        parent: { name: 'Building Your Application' },
-        current: 'Data Test',
+        parent: { name: 'Dashboard' },
+        current: 'Master',
       }}
     >
+      <Button
+        variant="outline"
+        size="sm"
+        className="ml-auto"
+        onClick={() => {
+          setIsAddModalOpen(true);
+        }}
+      >
+        <PlusIcon /> Add New
+      </Button>
+
       <DataTable data={data} columns={columns} />
+
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
-              Add for: {selectedPayment?.status || 'N/A'}
-            </DialogTitle>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>
+              Make changes to your profile here. Click save when you&apos;re
+              done.{selectedPayment?.status}
+            </DialogDescription>
           </DialogHeader>
-          <div className="mt-4">
-            <p>Form to add something for this payment</p>
+          <div className="grid gap-4">
+            <div className="grid gap-3">
+              <Label htmlFor="name-1">Name</Label>
+              <Input id="name-1" name="name" defaultValue="Pedro Duarte" />
+            </div>
+            <div className="grid gap-3">
+              <Label htmlFor="username-1">Username</Label>
+              <Input id="username-1" name="username" defaultValue="@peduarte" />
+            </div>
           </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit">Save changes</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>
