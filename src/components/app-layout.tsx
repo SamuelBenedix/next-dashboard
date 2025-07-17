@@ -10,13 +10,15 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
-
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { ReactNode } from 'react';
+import { SearchInput } from './ui/search-input';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation'; // for App Router
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -27,12 +29,18 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, breadcrumb }: AppLayoutProps) {
+  const router = useRouter();
+  const handleSearch = (query: string) => {
+    console.log('Search query:', query);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+        <header className="flex h-16 shrink-0 items-center justify-between px-4 gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          {/* Left section: Sidebar + Breadcrumb */}
+          <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
@@ -58,7 +66,22 @@ export default function AppLayout({ children, breadcrumb }: AppLayoutProps) {
               </Breadcrumb>
             )}
           </div>
+
+          {/* Right section: Search */}
+          <div className="min-w-[500px] max-w-sm w-full flex">
+            <SearchInput
+              onSearch={handleSearch}
+              placeholder="Search fruits..."
+            />
+            <Button
+              className="mx-5 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => router.push('/documents/create')}
+            >
+              Create Documents
+            </Button>
+          </div>
         </header>
+
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
