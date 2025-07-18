@@ -26,9 +26,16 @@ interface AppLayoutProps {
     parent?: { name: string; href?: string };
     current: string;
   };
+  onCreate?: () => void; // Optional callback for create action
+  isCreate?: boolean; // Optional prop to indicate if this is a create page
+  createButtonText?: string; // Optional text for create button
 }
 
-export default function AppLayout({ children, breadcrumb }: AppLayoutProps) {
+export default function AppLayout({
+  children,
+  breadcrumb,
+  isCreate,
+}: AppLayoutProps) {
   const router = useRouter();
   const handleSearch = (query: string) => {
     console.log('Search query:', query);
@@ -67,19 +74,20 @@ export default function AppLayout({ children, breadcrumb }: AppLayoutProps) {
             )}
           </div>
 
+          {isCreate ? (
+            <div></div>
+          ) : (
+            <div className="min-w-[500px] max-w-sm w-full flex">
+              <SearchInput onSearch={handleSearch} placeholder="Search..." />
+              <Button
+                className="mx-5 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => router.push('/documents/create')}
+              >
+                Create Documents
+              </Button>
+            </div>
+          )}
           {/* Right section: Search */}
-          <div className="min-w-[500px] max-w-sm w-full flex">
-            <SearchInput
-              onSearch={handleSearch}
-              placeholder="Search fruits..."
-            />
-            <Button
-              className="mx-5 bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => router.push('/documents/create')}
-            >
-              Create Documents
-            </Button>
-          </div>
         </header>
 
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>

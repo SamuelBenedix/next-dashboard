@@ -1,7 +1,5 @@
-// src/components/ui/PdfRenderer.tsx
-
 'use client';
-
+import { useEffect, useRef, useState } from 'react';
 import { Document, Page } from 'react-pdf';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -62,14 +60,30 @@ export default function PDFRenderer({
   // as the overlay is now solely managed by PdfPage.tsx
 
   onPageSize,
-
-  onRenderScaleChange, // New prop
 }: PDFRendererProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(600);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
   const handleLoadSuccess = (doc: { numPages: number }) => {
     onLoad(doc.numPages);
   };
 
-  const handlePageLoadSuccess = (page: any) => {
+  const handlePageLoadSuccess = (page: {
+    originalWidth: number;
+    originalHeight: number;
+  }) => {
     // 'any' for page object as its full type is complex
 
     const originalWidth = page.originalWidth; // Original width in PDF points
@@ -93,15 +107,13 @@ export default function PDFRenderer({
     });
 
     // Report the calculated scale and original PDF dimensions back to parent
-
-    onRenderScaleChange(calculatedScale, originalWidth, originalHeight);
   };
 
   return (
     <Document file={fileBuffer} onLoadSuccess={handleLoadSuccess}>
       <Page
         pageNumber={currentPage + 1}
-        width={800} // This forces the PDF to render at 800px width in the browser
+        width={containerWidth} // This forces the PDF to render at 800px width in the browser
         onLoadSuccess={handlePageLoadSuccess} // Use this callback to get actual scale
         renderAnnotationLayer={false} // Disable default layers to prevent double rendering if overlay is custom
         renderTextLayer={false} // Disable default layers
