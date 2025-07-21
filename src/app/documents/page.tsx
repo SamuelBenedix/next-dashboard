@@ -5,19 +5,10 @@ import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/app-layout';
 import { Services } from '@/services/serviceapi';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { DataTable } from './dataTable';
 import { getColumns } from './columns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DocumentItem {
   id: number;
@@ -32,37 +23,34 @@ export default function DataPage() {
   const apiService = new Services();
   const router = useRouter();
 
-  const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [search, setSearch] = useState('');
-  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [items, setItems] = useState([]);
-  const [totalItems, setTotalItems] = useState<number | null>(null);
+  const [items, setItems] = useState<DocumentItem[]>([]);
   const [pageCount, setPageCount] = useState(0);
 
   const fetchData = async () => {
     setIsLoading(true);
-    const jwtparsing = localStorage.getItem('jwtParse');
-    if (jwtparsing) {
-      const parsed = JSON.parse(jwtparsing);
-      setEmail(parsed.Email);
-    }
 
     try {
       const response = await apiService.getListDoc();
+
+      console.log('response', response);
       if (response.sign) {
         setDocs(response.sign);
-        setTotalItems(response.sign.length);
-        setItems(response.sign);
-        setPageCount(Math.ceil(response.sign.length / itemsPerPage));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error:', error);
-      if (error?.response?.status === 401) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { status?: number } }).response ===
+          'object' &&
+        (error as { response?: { status?: number } }).response?.status === 401
+      ) {
         alert('Check your internet');
       }
     }
@@ -88,6 +76,14 @@ export default function DataPage() {
       )
     );
   }, [search, docs]);
+
+  const updatePaginatedItems = () => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
+    setItems(paginatedDocs);
+    setPageCount(Math.ceil(filteredDocs.length / itemsPerPage));
+  };
 
   const signNow = (id: number) => {
     sessionStorage.setItem('id', String(id));
@@ -118,6 +114,10 @@ export default function DataPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    updatePaginatedItems();
+  }, [filteredDocs, page]);
+
   return (
     <AppLayout
       breadcrumb={{
@@ -130,47 +130,48 @@ export default function DataPage() {
           type="text"
           placeholder="Search documents..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1); // Reset ke halaman 1 saat search berubah
+          }}
         />
       </div>
 
-      <DataTable
-        data={items}
-        columns={getColumns({
-          onDownload: download,
-          onSign: signNow,
-        })}
-      />
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Document</DialogTitle>
-            <DialogDescription>
-              Change document data or metadata here.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="file-name">File Name</Label>
-              <Input
-                id="file-name"
-                defaultValue={selectedDoc?.fileName ?? ''}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="send-to">Send To</Label>
-              <Input id="send-to" defaultValue={selectedDoc?.sendTo ?? ''} />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: itemsPerPage }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-md" />
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          data={items}
+          columns={getColumns({
+            onDownload: download,
+            onSign: signNow,
+          })}
+        />
+      )}
+      {/* Pagination controls */}
+      <div className="flex justify-center mt-4 gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+        >
+          Previous
+        </Button>
+        <span className="self-center">
+          Page {page} of {pageCount}
+        </span>
+        <Button
+          variant="outline"
+          onClick={() => setPage((prev) => Math.min(prev + 1, pageCount))}
+          disabled={page === pageCount}
+        >
+          Next
+        </Button>
+      </div>
     </AppLayout>
   );
 }
