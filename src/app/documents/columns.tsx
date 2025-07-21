@@ -2,27 +2,65 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Trash2Icon, EyeIcon, ArrowUpDown, Edit2Icon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowUpDown } from 'lucide-react';
 
-// You can use a Zod schema here if you want.
 export type Payment = {
-  id: string;
-  amount: number;
-  status: 'pending' | 'processing' | 'success' | 'failed';
-  email: string;
+  id: number;
+  fileName: string;
+  sendBy: string;
+  sendTo: string;
+  status: number;
 };
 
 interface ColumnActions {
-  onView: (payment: Payment) => void;
-  onAdd: (payment: Payment) => void;
-  onDelete: (payment: Payment) => void;
+  onDownload: (id: number, fileName: string) => void;
+  onSign: (id: number) => void;
 }
 
 export const getColumns = ({
-  onView,
-  onAdd,
-  onDelete,
+  onDownload,
+  onSign,
 }: ColumnActions): ColumnDef<Payment>[] => [
+  {
+    accessorKey: 'fileName',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Documents
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.original.fileName}</div>,
+  },
+  {
+    accessorKey: 'sendBy',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Created By
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.original.sendBy}</div>,
+  },
+  {
+    accessorKey: 'sendTo',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Send To
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div>{row.original.sendTo}</div>,
+  },
   {
     accessorKey: 'status',
     header: ({ column }) => {
@@ -36,60 +74,60 @@ export const getColumns = ({
         </Button>
       );
     },
-    cell: ({ row }) => <div>{row.original.status}</div>,
-  },
-  {
-    accessorKey: 'amount',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Amount
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
+    cell: ({ row }) => {
+      const status = row.original.status;
+
+      let color:
+        | 'default'
+        | 'secondary'
+        | 'destructive'
+        | 'outline'
+        | null
+        | undefined = 'default';
+      let label = 'Unknown';
+
+      switch (status) {
+        case 1:
+        case 3:
+          label = 'Completed';
+          color = 'default'; // atau 'success' jika kamu pakai varian lain
+          break;
+        case 0:
+        case 2:
+        default:
+          label = 'In Progress';
+          color = 'secondary'; // abu-abu
+          break;
+      }
+
+      return <Badge variant={color}>{label}</Badge>;
     },
-    cell: ({ row }) => <div>${row.original.amount}</div>,
   },
   {
     id: 'actions',
-    header: () => <div className="text-center">Action</div>,
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const payment = row.original;
 
       return (
         <div className="flex items-center justify-center gap-2">
-          {/* Add Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="size-8"
-            onClick={() => onAdd(payment)}
-          >
-            <Edit2Icon className="w-4 h-4 text-green-600" />
-          </Button>
-
-          {/* View Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="size-8"
-            onClick={() => onView(payment)}
-          >
-            <EyeIcon className="w-4 h-4 text-blue-600" />
-          </Button>
-
-          {/* Delete Button */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="size-8"
-            onClick={() => onDelete(payment)}
-          >
-            <Trash2Icon className="w-4 h-4 text-red-600" />
-          </Button>
+          {payment.status === 3 ? (
+            <Button
+              variant="default"
+              className="h-8 px-3"
+              onClick={() => onDownload(payment.id, payment.fileName)}
+            >
+              Download
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              className="h-8 px-3"
+              onClick={() => onSign(payment.id)}
+            >
+              Sign Now
+            </Button>
+          )}
         </div>
       );
     },

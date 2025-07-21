@@ -1,17 +1,9 @@
 'use client';
 
-import { DataTable } from './dataTable';
-import { getColumns } from './columns';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/app-layout';
-
-type Payment = {
-  id: string;
-  amount: number;
-  status: 'pending' | 'processing' | 'success' | 'failed';
-  email: string;
-};
-
+import { Services } from '@/services/serviceapi';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,89 +16,151 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DataTable } from './dataTable';
+import { getColumns } from './columns';
 
-const data: Payment[] = [
-  {
-    id: 'm5gr84i9',
-    amount: 316,
-    status: 'success',
-    email: 'ken99@example.com',
-  },
-  {
-    id: '3u1reuv4',
-    amount: 242,
-    status: 'success',
-    email: 'Abe45@example.com',
-  },
-  {
-    id: 'derv1ws0',
-    amount: 837,
-    status: 'processing',
-    email: 'Monserrat44@example.com',
-  },
-  {
-    id: '5kma53ae',
-    amount: 874,
-    status: 'success',
-    email: 'Silas22@example.com',
-  },
-  {
-    id: 'bhqecj4p',
-    amount: 721,
-    status: 'failed',
-    email: 'carmella@example.com',
-  },
-];
+interface DocumentItem {
+  id: number;
+  fileName: string;
+  sendBy: string;
+  sendTo: string;
+  status: number;
+  isActive?: boolean;
+}
 
 export default function DataPage() {
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const apiService = new Services();
+  const router = useRouter();
+
+  const [selectedDoc, setSelectedDoc] = useState<DocumentItem | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [docs, setDocs] = useState<DocumentItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [items, setItems] = useState([]);
+  const [totalItems, setTotalItems] = useState<number | null>(null);
+  const [pageCount, setPageCount] = useState(0);
 
-  const handleView = (payment: Payment) => {
-    console.log('Viewing', payment);
+  const fetchData = async () => {
+    setIsLoading(true);
+    const jwtparsing = localStorage.getItem('jwtParse');
+    if (jwtparsing) {
+      const parsed = JSON.parse(jwtparsing);
+      setEmail(parsed.Email);
+    }
+
+    try {
+      const response = await apiService.getListDoc();
+      if (response.sign) {
+        setDocs(response.sign);
+        setTotalItems(response.sign.length);
+        setItems(response.sign);
+        setPageCount(Math.ceil(response.sign.length / itemsPerPage));
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      if (error?.response?.status === 401) {
+        alert('Check your internet');
+      }
+    }
+    setIsLoading(false);
   };
 
-  const handleAdd = (payment: Payment) => {
-    setSelectedPayment(payment);
-    setIsAddModalOpen(true);
+  const logMonitoring = async () => {
+    try {
+      await apiService.logMonitoring('/documents');
+    } catch (error) {
+      console.error('Error monitoring:', error);
+    }
   };
 
-  const handleDelete = (payment: Payment) => {
-    console.log('Deleting', payment);
+  const filteredDocs = useMemo(() => {
+    if (!search) return docs;
+    const keyword = search.toLowerCase();
+    return docs.filter((doc) =>
+      Object.values(doc).some((val) =>
+        String(val ?? '')
+          .toLowerCase()
+          .includes(keyword)
+      )
+    );
+  }, [search, docs]);
+
+  const signNow = (id: number) => {
+    sessionStorage.setItem('id', String(id));
+    router.push('/documents/create');
   };
 
-  const columns = getColumns({
-    onView: handleView,
-    onAdd: handleAdd,
-    onDelete: handleDelete,
-  });
+  const download = async (id: number, fileName: string) => {
+    const formData = new FormData();
+    formData.append('idFile', id.toString());
+    try {
+      const res = await apiService.downloadCertified(formData);
+      const blobUrl = URL.createObjectURL(res.data);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download error:', error);
+    }
+  };
+
+  useEffect(() => {
+    logMonitoring();
+    fetchData();
+  }, []);
 
   return (
     <AppLayout
       breadcrumb={{
         parent: { name: 'Dashboard' },
-        current: 'Master',
+        current: 'Documents',
       }}
     >
-      <DataTable data={data} columns={columns} />
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Search documents..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <DataTable
+        data={items}
+        columns={getColumns({
+          onDownload: download,
+          onSign: signNow,
+        })}
+      />
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
+            <DialogTitle>Edit Document</DialogTitle>
             <DialogDescription>
-              Make changes to your profile here. Click save when you&apos;re
-              done.{selectedPayment?.status}
+              Change document data or metadata here.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4">
-            <div className="grid gap-3">
-              <Label htmlFor="name-1">Name</Label>
-              <Input id="name-1" name="name" defaultValue="Pedro Duarte" />
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="file-name">File Name</Label>
+              <Input
+                id="file-name"
+                defaultValue={selectedDoc?.fileName ?? ''}
+              />
             </div>
-            <div className="grid gap-3">
-              <Label htmlFor="username-1">Username</Label>
-              <Input id="username-1" name="username" defaultValue="@peduarte" />
+            <div className="grid gap-2">
+              <Label htmlFor="send-to">Send To</Label>
+              <Input id="send-to" defaultValue={selectedDoc?.sendTo ?? ''} />
             </div>
           </div>
           <DialogFooter>
