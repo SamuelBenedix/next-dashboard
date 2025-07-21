@@ -35,7 +35,7 @@ export default function DataPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.getListDoc();
+      const response = await apiService.getListDoc('2');
 
       console.log('response', response);
       if (response.sign) {
@@ -122,7 +122,7 @@ export default function DataPage() {
     <AppLayout
       breadcrumb={{
         parent: { name: 'Dashboard' },
-        current: 'Documents',
+        current: 'Draft',
       }}
     >
       <div className="mb-4">

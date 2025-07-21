@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { GalleryVerticalEnd, Map, PieChart, DockIcon } from 'lucide-react';
+import { GalleryVerticalEnd, PieChart, DockIcon } from 'lucide-react';
 import { NavProjects } from '@/components/nav-projects';
 import { NavUser } from '@/components/nav-user';
 import Image from 'next/image';
@@ -35,14 +35,19 @@ const data = {
       icon: DockIcon,
     },
     {
-      name: 'Sales & Marketing',
-      url: '#',
+      name: 'inbox',
+      url: '/inbox',
       icon: PieChart,
     },
     {
-      name: 'Travel',
-      url: '#',
-      icon: Map,
+      name: 'draft',
+      url: '/draft',
+      icon: PieChart,
+    },
+    {
+      name: 'monitoring',
+      url: '/monitoring',
+      icon: PieChart,
     },
   ],
 };
