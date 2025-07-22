@@ -34,7 +34,6 @@ export default function PdfPage() {
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [pegawai, setPegawai] = useState([]);
-  const [idDoc, setIdDoc] = useState<string | null>(null);
   const [isUploaded, setIsUploaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // PDF States
@@ -66,6 +65,7 @@ export default function PdfPage() {
     try {
       setIsLoading(true);
       const buffer = await selectedFile.arrayBuffer();
+      console.log('buffer', buffer);
       setFileBuffer(buffer);
       setFile(selectedFile);
       setIsUploaded(true);
@@ -133,7 +133,6 @@ export default function PdfPage() {
       try {
         const formData = new FormData();
 
-        if (idDoc) formData.append('IdDoc', idDoc);
         if (file) formData.append('Document', file);
         if (reason) formData.append('Reason', reason);
         if (recipient) formData.append('SendToNpp', recipient);
@@ -309,15 +308,41 @@ export default function PdfPage() {
                 </div>
               </div>
             )}
+            {isUploaded && (
+              <>
+                {showSignatureBox ? (
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      handleSubmit('sign');
+                    }}
+                  >
+                    Sign
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      handleSubmit('send');
+                    }}
+                  >
+                    Send
+                  </Button>
+                )}
+              </>
+            )}
 
-            <Button
-              variant="default"
-              onClick={() => {
-                handleSubmit('sign');
-              }}
-            >
-              Send
-            </Button>
+            {isUploaded && (
+              <Button
+                className="ml-3"
+                variant="default"
+                onClick={() => {
+                  handleSubmit('draft');
+                }}
+              >
+                Draft
+              </Button>
+            )}
           </div>
         </div>
       </div>

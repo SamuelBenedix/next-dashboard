@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
 import { Rnd } from 'react-rnd';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AppLayout } from '@/components';
 import { Services } from '@/services/serviceapi';
@@ -14,160 +13,108 @@ import { useRouter, useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-import InputDropdown from '@/components/ui/input-dropdown';
-import { PDFDocument } from 'pdf-lib';
-import axios from 'axios';
 
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
   ssr: false,
 });
-
-type Pegawai = {
-  npp: string;
-  nama: string;
-  email: string;
-  alias: string;
-};
 
 export default function SignNowPage() {
   const router = useRouter();
   const { id } = useParams();
   const apiService = new Services();
   const docId = typeof id === 'string' ? id : '';
-
-  const [pdfDoc, setPdfDoc] = useState<PDFDocument>();
-  const [fileBuffer, setFileBuffer] = useState<Uint8Array>();
-  const [numPages, setNumPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-
+  const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
+  const [numPages, setNumPages] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [desc, setDesc] = useState('');
   const [reason, setReason] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [pegawai, setPegawai] = useState<Pegawai[]>([]);
-
   const [signatureX, setSignatureX] = useState(100);
   const [signatureY, setSignatureY] = useState(100);
   const [signatureWidth, setSignatureWidth] = useState(120);
   const [signatureHeight, setSignatureHeight] = useState(80);
-  const [showSignatureBox, setShowSignatureBox] = useState(true);
+  const pdfPaperHeight = 842;
+  const pdfPaperWidth = 595;
 
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploaded, setIsUploaded] = useState(false);
+  const formRef = useRef<{ validate: () => Promise<{ valid: boolean }> }>(null);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!docId) return;
 
     const load = async () => {
-      setLoading(true);
+      setIsLoading(true);
       try {
         const formData = new FormData();
-        formData.append('idFile', id);
-
-        const blobResponse = await apiService.downloadCertified(formData);
-        const blob = blobResponse.data;
-
-        const arrayBuffer = await blob.arrayBuffer();
-        const uint8 = new Uint8Array(arrayBuffer);
-
-        setFileBuffer(uint8);
-
-        const doc = await PDFDocument.load(uint8);
-        setPdfDoc(doc);
-        setNumPages(doc.getPageCount());
+        formData.append('idFile', docId);
+        const response = await apiService.downloadCertified(formData);
+        setFileBuffer(response.data);
       } catch (error) {
         console.error('Failed to load PDF:', error);
         Swal.fire('Error', 'Gagal memuat dokumen', 'error');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     load();
-  }, [id]);
+  }, [docId]);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-    setFile(selectedFile);
-    setIsUploaded(true);
+  const handleSubmit = async (param: 'sign' | 'reject') => {
+    if (!id) return;
+    const confirmText =
+      param === 'sign'
+        ? 'You are about to sign this document?'
+        : 'You are about to reject this document?';
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const arrayBuffer = reader.result as ArrayBuffer;
-      setFileBuffer(new Uint8Array(arrayBuffer));
-    };
-    reader.readAsArrayBuffer(selectedFile);
-  };
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: confirmText,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: `Yes, ${param} it!`,
+    });
 
-  const handleSubmit = async (param: 'draft' | 'send' | 'sign') => {
-    if (!fileBuffer && param !== 'send') {
-      Swal.fire('Error', 'Mohon unggah dokumen PDF terlebih dahulu.', 'error');
+    if (!result.isConfirmed) return;
+
+    const valid = (await formRef.current?.validate())?.valid;
+    if (!valid) {
+      Swal.fire(
+        'Validation Error',
+        'Please fill in the reason field.',
+        'error'
+      );
       return;
     }
 
-    const confirm = await Swal.fire({
-      title: 'Apakah Anda yakin?',
-      text:
-        param === 'draft'
-          ? 'Anda akan menyimpan dokumen ini sebagai draft.'
-          : param === 'sign'
-          ? 'Anda akan menandatangani dokumen ini.'
-          : 'Anda akan mengirim dokumen ini.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: `Ya, ${param}!`,
-    });
+    const formData = new FormData();
+    formData.append('IdDoc', id as string);
+    formData.append('Reason', reason);
+    formData.append('IsDraft', 'false');
+    formData.append('IsApprove', param === 'sign' ? 'true' : 'false');
 
-    if (!confirm.isConfirmed) return;
-    setIsLoading(true);
+    if (param === 'sign') {
+      formData.append('Xloc', Math.round(signatureX).toString());
+      formData.append('Yloc', Math.round(signatureY).toString());
+      const sizeAdjustment = pdfPaperWidth > pdfPaperHeight ? 20 : 10;
+      formData.append('Size', (signatureWidth - sizeAdjustment).toString());
+      formData.append('PageNumber', currentPage.toString());
+      formData.append('SendToNpp', '');
+    }
 
     try {
-      if (param === 'sign' && !reason) {
-        Swal.fire(
-          'Validasi Gagal',
-          'Alasan tanda tangan harus diisi.',
-          'error'
-        );
-        return;
-      }
-
-      if (param === 'send' && !recipient) {
-        Swal.fire('Validasi Gagal', 'Penerima wajib dipilih.', 'error');
-        return;
-      }
-
-      const formData = new FormData();
-      if (docId) formData.append('IdDoc', docId);
-      if (file) formData.append('Document', file);
-      if (reason) formData.append('Reason', reason);
-      if (recipient) formData.append('SendToNpp', recipient);
-
-      if (param === 'sign') {
-        formData.append('Xloc', Math.round(signatureX).toString());
-        formData.append('Yloc', Math.round(signatureY).toString());
-        formData.append('Size', signatureWidth.toString());
-        formData.append('PageNumber', currentPage.toString());
-        formData.append('IsDraft', 'false');
-      } else {
-        formData.append('IsDraft', param === 'draft' ? 'true' : 'false');
-      }
-
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/sign`,
-        formData
-      );
-
+      setIsLoading(true);
+      const response = await apiService.signCertified(formData);
       Swal.fire(
-        'Sukses',
-        response?.data?.message || 'Operasi berhasil.',
+        'Validation Success',
+        response.data.data.message,
         'success'
       ).then(() => {
         router.push('/documents');
       });
     } catch (error) {
-      console.error(error);
-      Swal.fire('Error', 'Terjadi kesalahan. Silakan coba lagi.', 'error');
+      console.error('Error processing document:', error);
+      Swal.fire('Error', `Failed to ${param} document`, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -180,13 +127,14 @@ export default function SignNowPage() {
       isCreate
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* PDF Area */}
         <div className="md:col-span-7 col-span-12 relative p-4 min-h-[calc(100vh-100px)] bg-gray-200">
           {fileBuffer ? (
             <>
               <div className="flex items-center mb-2">
                 <select
                   className="p-2 border rounded"
-                  onChange={(e) => setCurrentPage(+e.target.value)}
+                  onChange={(e) => setCurrentPage(Number(e.target.value))}
                   value={currentPage}
                 >
                   {Array.from({ length: numPages }, (_, i) => (
@@ -199,7 +147,7 @@ export default function SignNowPage() {
 
               <div className="relative border" style={{ width: 'fit-content' }}>
                 <PDFRenderer
-                  fileBuffer={{ data: fileBuffer }}
+                  fileBuffer={fileBuffer}
                   currentPage={currentPage}
                   onLoad={setNumPages}
                   onPageSize={() => {}}
@@ -209,32 +157,30 @@ export default function SignNowPage() {
                   onRenderScaleChange={() => {}}
                 />
 
-                {showSignatureBox && (
-                  <Rnd
-                    bounds="parent"
-                    default={{
-                      x: signatureX,
-                      y: signatureY,
-                      width: signatureWidth,
-                      height: signatureHeight,
-                    }}
-                    onDragStop={(_, d) => {
-                      setSignatureX(d.x);
-                      setSignatureY(d.y);
-                    }}
-                    onResizeStop={(_, __, ref, ___, position) => {
-                      setSignatureWidth(ref.offsetWidth);
-                      setSignatureHeight(ref.offsetHeight);
-                      setSignatureX(position.x);
-                      setSignatureY(position.y);
-                    }}
-                    className="z-50"
-                  >
-                    <div className="w-full h-full border-2 border-blue-500 bg-white/40 rounded-md flex items-center justify-center text-sm text-blue-700 font-semibold">
-                      Signature
-                    </div>
-                  </Rnd>
-                )}
+                <Rnd
+                  bounds="parent"
+                  default={{
+                    x: signatureX,
+                    y: signatureY,
+                    width: signatureWidth,
+                    height: signatureHeight,
+                  }}
+                  onDragStop={(_, d) => {
+                    setSignatureX(d.x);
+                    setSignatureY(d.y);
+                  }}
+                  onResizeStop={(_, __, ref, ___, position) => {
+                    setSignatureWidth(ref.offsetWidth);
+                    setSignatureHeight(ref.offsetHeight);
+                    setSignatureX(position.x);
+                    setSignatureY(position.y);
+                  }}
+                  className="z-50"
+                >
+                  <div className="w-full h-full border-2 border-blue-500 bg-white/40 rounded-md flex items-center justify-center text-sm text-blue-700 font-semibold">
+                    Signature
+                  </div>
+                </Rnd>
               </div>
             </>
           ) : (
@@ -244,74 +190,47 @@ export default function SignNowPage() {
           )}
         </div>
 
+        {/* Form Area */}
         <div className="md:col-span-5 col-span-12 px-4">
           <div className="space-y-4 w-full max-w-sm">
-            <div className="grid gap-2">
-              <Label htmlFor="upload-pdf">Unggah Dokumen PDF</Label>
+            <div className="grid gap-2 mt-3">
+              <Label htmlFor="signature-desc">Keterangan Tambahan</Label>
               <Input
-                id="upload-pdf"
-                type="file"
-                accept="application/pdf"
-                onChange={handleUpload}
-                className="cursor-pointer"
+                id="signature-desc"
+                type="text"
+                placeholder="Masukkan keterangan tambahan"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
               />
             </div>
 
-            {isUploaded && (
-              <>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="show-signature-box"
-                    checked={showSignatureBox}
-                    onCheckedChange={(checked) =>
-                      setShowSignatureBox(!!checked)
-                    }
-                  />
-                  <div className="grid gap-1">
-                    <Label htmlFor="show-signature-box" className="font-medium">
-                      Tanda Tangan Digital
-                    </Label>
-                    <p className="text-muted-foreground text-sm">
-                      Tampilkan kotak tanda tangan di atas dokumen.
-                    </p>
-                  </div>
-                </div>
+            <div className="grid gap-2 mt-3">
+              <Label htmlFor="signature-reason">Alasan Penandatanganan</Label>
+              <Input
+                id="signature-reason"
+                type="text"
+                placeholder="Masukkan alasan penandatanganan"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </div>
 
-                {!showSignatureBox && (
-                  <div className="grid gap-2 mt-3">
-                    <Label htmlFor="recipient">Pilih Pegawai Penerima</Label>
-                    <InputDropdown<Pegawai>
-                      data={pegawai}
-                      labelKey="nama"
-                      valueKey="npp"
-                      filterKey="nama"
-                      filterExclude="ADMINISTRATOR"
-                      placeholder="Pilih Pegawai"
-                      onChange={(val) => setRecipient(val)}
-                    />
-                  </div>
-                )}
-
-                <div className="grid gap-2 mt-3">
-                  <Label htmlFor="signature-desc">Alasan Tanda Tangan</Label>
-                  <Input
-                    id="signature-desc"
-                    type="text"
-                    placeholder="Masukkan alasan/signing reason"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            <Button variant="default" onClick={() => handleSubmit('sign')}>
+            <Button onClick={() => handleSubmit('sign')}>
               {isLoading ? 'Memproses...' : 'Tandatangani Dokumen'}
+            </Button>
+
+            <Button
+              className="ml-3"
+              variant="destructive"
+              onClick={() => handleSubmit('reject')}
+            >
+              {isLoading ? 'Memproses...' : 'Tolak Dokumen'}
             </Button>
           </div>
         </div>
       </div>
 
+      {/* Loading overlay */}
       {isLoading && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2 bg-white p-6 rounded-xl shadow-lg">

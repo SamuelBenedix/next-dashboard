@@ -96,7 +96,7 @@ export function LoginForm({
         const jwtParsed = await apiService.parseJwt(jwT_Token);
         localStorage.setItem('jwtParse', JSON.stringify(jwtParsed));
 
-        router.push('/dashboard');
+        router.push('/documents');
       } else {
         Swal.fire({
           icon: 'error',

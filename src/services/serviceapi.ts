@@ -225,20 +225,23 @@ export class Services {
     }
   }
 
-  async downloadCertified(param: any): Promise<AxiosResponse<Blob>> {
-    const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DownloadFile`
+  async downloadCertified(param: any): Promise<AxiosResponse<ArrayBuffer>> {
+    const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DownloadFile`;
+
     const options: AxiosRequestConfig = {
       headers: {
         Authorization: 'Bearer ' + localStorage.getItem('jwT_Token'),
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      responseType: 'blob',
-    }
+      responseType: 'arraybuffer', // ✅ Needed for react-pdf
+    };
+
     try {
-      const response = await axios.post(url, param, options)
-      return response
+      const response = await axios.post(url, param, options);
+      return response; // response.data will be ArrayBuffer
     } catch (error) {
-      console.error('Error downloading certified file:', error)
-      throw error
+      console.error('Error downloading certified file:', error);
+      throw error;
     }
   }
 
