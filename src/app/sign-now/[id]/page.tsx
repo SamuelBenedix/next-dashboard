@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
 import { Rnd } from 'react-rnd';
@@ -32,10 +32,9 @@ export default function SignNowPage() {
   const [signatureY, setSignatureY] = useState(100);
   const [signatureWidth, setSignatureWidth] = useState(120);
   const [signatureHeight, setSignatureHeight] = useState(80);
+  const [file, setFile] = useState<File | null>(null);
   const pdfPaperHeight = 842;
   const pdfPaperWidth = 595;
-
-  const formRef = useRef<{ validate: () => Promise<{ valid: boolean }> }>(null);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,6 +47,12 @@ export default function SignNowPage() {
         const formData = new FormData();
         formData.append('idFile', docId);
         const response = await apiService.downloadCertified(formData);
+        const arrayBuffer = response.data; // this is ArrayBuffer
+        const blob = new Blob([arrayBuffer], { type: 'application/pdf' }); // 👈 manually specify MIME type
+        const file = new File([blob], 'document.pdf', {
+          type: 'application/pdf',
+        }); // 👌 now it's a valid File
+        setFile(file);
         setFileBuffer(response.data);
       } catch (error) {
         console.error('Failed to load PDF:', error);
@@ -77,19 +82,12 @@ export default function SignNowPage() {
 
     if (!result.isConfirmed) return;
 
-    const valid = (await formRef.current?.validate())?.valid;
-    if (!valid) {
-      Swal.fire(
-        'Validation Error',
-        'Please fill in the reason field.',
-        'error'
-      );
-      return;
-    }
-
     const formData = new FormData();
-    formData.append('IdDoc', id as string);
-    formData.append('Reason', reason);
+
+    if (file) formData.append('Document', file);
+    formData.append('idFile', id as string);
+    formData.append('reason', reason);
+    formData.append('keterangan', desc);
     formData.append('IsDraft', 'false');
     formData.append('IsApprove', param === 'sign' ? 'true' : 'false');
 

@@ -49,6 +49,11 @@ const data = {
       url: '/monitoring',
       icon: PieChart,
     },
+    {
+      name: 'dashboard',
+      url: '/dashboard',
+      icon: PieChart,
+    },
   ],
 };
 
