@@ -10,6 +10,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { uploadModifyToService } from '@/utils/uploadModifyToService';
 import { Services } from '@/services/serviceapi';
+import { PenTool } from 'lucide-react';
 
 const apiService = new Services();
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
@@ -182,7 +183,6 @@ export default function PdfPage() {
 
             <label className="cursor-pointer flex items-center gap-2 p-2 border rounded hover:bg-gray-100">
               <Upload className="w-5 h-5" />
-              <span className="text-sm">Upload Tanda Tangan</span>
               <input
                 type="file"
                 accept="image/png, image/jpeg"
@@ -204,10 +204,11 @@ export default function PdfPage() {
             <Button
               type="button"
               variant="outline"
-              className="text-sm"
+              className="p-2"
+              title="Tanda Tangan Manual"
               onClick={() => setShowSignatureModal(true)}
             >
-              Tanda Tangan Manual
+              <PenTool className="w-5 h-5" />
             </Button>
           </div>
 
