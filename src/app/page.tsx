@@ -23,8 +23,8 @@ export default function PdfPage() {
   );
   const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
   const [uploadedSigImage, setUploadedSigImage] = useState<string | null>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [sigSize, setSigSize] = useState({ w: 150, h: 75 });
+  const [positionSign, setPositionSign] = useState({ x: 0, y: 0 });
+  const [sigSize, setSigSize] = useState({ w: 100, h: 50 });
   const [progress, setProgress] = useState(0);
   const [pdfRenderedSize, setPdfRenderedSize] = useState({
     width: 0,
@@ -38,6 +38,8 @@ export default function PdfPage() {
   const [numPages, setNumPages] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  console.log('pdfRenderedSize', pdfRenderedSize);
+  console.log('pdfOriginalSize', pdfOriginalSize);
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -61,14 +63,12 @@ export default function PdfPage() {
 
     setFileBuffer(buffer);
     setUploadedSigImage(null);
-    setPosition({ x: 0, y: 0 });
   };
 
   const downloadPDFbyID = async (
     updateProgress: (progress: number) => void
   ) => {
     const getUploadID = localStorage.getItem('IdUpload');
-    console.log('Id Doc:', getUploadID);
 
     const currentDate = new Date();
     const formattedDate = `${currentDate.getDate()}${
@@ -108,23 +108,24 @@ export default function PdfPage() {
     setLoading(true);
     try {
       // Hitung skala dari tampilan ke ukuran asli PDF
-      const scaleX = pdfOriginalSize.width / pdfRenderedSize.width;
-      const scaleY = pdfOriginalSize.height / pdfRenderedSize.height;
+      const x = positionSign.x;
+      const y = pdfRenderedSize.height - positionSign.y - sigSize.h - 250;
 
-      const x = position.x * scaleX;
-      const y = (pdfRenderedSize.height - position.y - sigSize.h) * scaleY;
-      const width = sigSize.w * scaleX;
-      const height = sigSize.h * scaleY;
+      const width = sigSize.w;
+      const height = sigSize.h - 20;
+
+      console.log('width', width);
+      console.log('height', height);
 
       await uploadModifyToService({
         documentURL: uploadedDocument, // tidak digunakan karena kita punya file buffer
         capturedSignature: uploadedSigImage, // base64 image
-        selectedImageUrl: uploadedSigImage, // tidak pakai image mode
+        selectedImageUrl: '', // tidak pakai image mode
         currentPage: currentPage + 1, // karena page dimulai dari 1
         xCoordinate: x,
         yCoordinate: y,
-        pdfPaperWidth: pdfOriginalSize.width,
-        pdfPaperHeight: pdfOriginalSize.height,
+        pdfPaperWidth: pdfRenderedSize.width,
+        pdfPaperHeight: pdfRenderedSize.height,
         scale: 1, // tidak perlu penyesuaian karena posisi sudah dikalkulasi
         fileBytesOverride: fileBufferArray, // tambahan argumen jika perlu override
         width,
@@ -188,8 +189,13 @@ export default function PdfPage() {
               fileBuffer={fileBuffer}
               currentPage={currentPage}
               onLoad={(n) => setNumPages(n)}
-              onPageSize={(size) => setPdfRenderedSize(size)}
+              onPageSize={(size) => {
+                console.log('size', size);
+                setPdfRenderedSize(size);
+              }}
               onRenderScaleChange={(scale, w, h) => {
+                console.log('pdf w', w);
+                console.log('pdf h', h);
                 setPdfOriginalSize({ width: w, height: h });
               }}
             />
@@ -197,14 +203,16 @@ export default function PdfPage() {
             {uploadedSigImage && (
               <Rnd
                 size={{ width: sigSize.w, height: sigSize.h }}
-                position={{ x: position.x, y: position.y }}
-                onDragStop={(_, d) => setPosition({ x: d.x, y: d.y })}
-                onResizeStop={(_, __, ref, ___, pos) => {
+                position={{ x: positionSign.x, y: positionSign.y }}
+                onDragStop={(_, d) => {
+                  setPositionSign({ x: d.x, y: d.y });
+                }}
+                onResizeStop={(_, __, ref) => {
+                  console.log('ref.style.', ref.style);
                   setSigSize({
                     w: parseFloat(ref.style.width),
                     h: parseFloat(ref.style.height),
                   });
-                  setPosition(pos);
                 }}
                 bounds="parent"
                 lockAspectRatio={true}

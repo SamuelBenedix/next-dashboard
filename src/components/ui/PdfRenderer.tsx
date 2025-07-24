@@ -80,15 +80,12 @@ export default function PDFRenderer({
     onLoad(doc.numPages);
   };
 
-  const handlePageLoadSuccess = (page: {
-    originalWidth: number;
-    originalHeight: number;
-  }) => {
-    // 'any' for page object as its full type is complex
+  const handlePageLoadSuccess = (page: { width: number; height: number }) => {
+    // 'any' for page object as its full
+    // type is complex
+    const originalWidth = page.width; // Original width in PDF points
 
-    const originalWidth = page.originalWidth; // Original width in PDF points
-
-    const originalHeight = page.originalHeight; // Original height in PDF points
+    const originalHeight = page.height; // Original height in PDF points
 
     const renderedWidthInPx = 800; // This matches the 'width' prop set on the <Page> component
 

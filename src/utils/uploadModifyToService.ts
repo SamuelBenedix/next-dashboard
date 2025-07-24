@@ -95,6 +95,8 @@ export const uploadModifyToService = async ({
  pdfPaperHeight,
  scale,
  fileBytesOverride,
+ width,
+ height,
 }: UploadParams): Promise<void> => {
  if (!documentURL) {
   console.error('documentURL is empty');
@@ -116,6 +118,8 @@ export const uploadModifyToService = async ({
     y: x,
     pdfBytes: existingPdfBytes as ArrayBuffer | Uint8Array,
     selectedPage,
+    width,
+    height,
    });
 
    const response = await uploadModifiedPdf(modifiedPdfBytes);
@@ -155,6 +159,8 @@ export const uploadModifyToService = async ({
     y: x,
     pdfBytes: existingPdfBytes as ArrayBuffer | Uint8Array,
     selectedPage: selectedPage,
+    width,
+    height,
    });
 
    const response = await uploadModifiedPdf(modifiedPdfBytes);
