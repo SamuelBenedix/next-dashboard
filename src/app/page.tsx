@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,8 @@ export default function PdfPage() {
   const [uploadedSigImage, setUploadedSigImage] = useState<string | null>(null);
   const [positionSign, setPositionSign] = useState({ x: 0, y: 0 });
   const [sigSize, setSigSize] = useState({ w: 100, h: 50 });
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [progress, setProgress] = useState(0);
   const [pdfRenderedSize, setPdfRenderedSize] = useState({
     width: 0,
@@ -97,6 +99,22 @@ export default function PdfPage() {
       console.error('Error downloading file:', error);
       throw error;
     }
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const confirmSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataURL = canvas.toDataURL('image/png');
+    setUploadedSigImage(dataURL);
+    setShowSignatureModal(false);
   };
 
   const exportPDF = async () => {
@@ -182,6 +200,15 @@ export default function PdfPage() {
                 className="hidden"
               />
             </label>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              onClick={() => setShowSignatureModal(true)}
+            >
+              Tanda Tangan Manual
+            </Button>
           </div>
 
           <div className="relative border" style={{ width: 'fit-content' }}>
@@ -244,6 +271,61 @@ export default function PdfPage() {
               {loading ? 'Mengekspor...' : 'Ekspor PDF Bertanda Tangan'}
             </Button>
           </div>
+
+          {showSignatureModal && (
+            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+              <div className="bg-white rounded-lg p-6 shadow-lg w-[500px] max-w-full">
+                <h2 className="text-lg font-semibold mb-4">
+                  Buat Tanda Tangan
+                </h2>
+                <canvas
+                  ref={canvasRef}
+                  width={400}
+                  height={200}
+                  className="border border-gray-300 rounded cursor-crosshair"
+                  onMouseDown={(e) => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    ctx.beginPath();
+                    const rect = canvas.getBoundingClientRect();
+                    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+                    const draw = (moveEvent: MouseEvent) => {
+                      ctx.lineTo(
+                        moveEvent.clientX - rect.left,
+                        moveEvent.clientY - rect.top
+                      );
+                      ctx.stroke();
+                    };
+                    const stop = () => {
+                      window.removeEventListener('mousemove', draw);
+                      window.removeEventListener('mouseup', stop);
+                    };
+                    window.addEventListener('mousemove', draw);
+                    window.addEventListener('mouseup', stop);
+                  }}
+                />
+
+                <div className="mt-4 flex justify-between">
+                  <Button variant="ghost" onClick={clearCanvas}>
+                    Clear
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowSignatureModal(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button onClick={confirmSignature}>
+                      Gunakan Tanda Tangan
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
