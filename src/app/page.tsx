@@ -1,103 +1,243 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Rnd } from 'react-rnd';
+import { Upload } from 'lucide-react';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+import { uploadModifyToService } from '@/utils/uploadModifyToService';
+import { Services } from '@/services/serviceapi';
+
+const apiService = new Services();
+const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
+  ssr: false,
+});
+
+export default function PdfPage() {
+  const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
+  const [fileBufferArray, setFileBufferArray] = useState<Uint8Array | null>(
+    null
+  );
+  const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
+  const [uploadedSigImage, setUploadedSigImage] = useState<string | null>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [sigSize, setSigSize] = useState({ w: 150, h: 75 });
+  const [progress, setProgress] = useState(0);
+  const [pdfRenderedSize, setPdfRenderedSize] = useState({
+    width: 0,
+    height: 0,
+  });
+  const [pdfOriginalSize, setPdfOriginalSize] = useState({
+    width: 0,
+    height: 0,
+  });
+  const [currentPage, setCurrentPage] = useState(0);
+  const [numPages, setNumPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedDocument(objectUrl);
+    localStorage.setItem('documentURL', objectUrl);
+
+    const arrayBuffer = await file.arrayBuffer(); // ← ini baru valid
+    const bufferCopy = new Uint8Array(arrayBuffer.byteLength);
+    bufferCopy.set(new Uint8Array(arrayBuffer));
+
+    setFileBufferArray(bufferCopy);
+
+    if (!file || file.type !== 'application/pdf') {
+      alert('Mohon unggah file PDF!');
+      return;
+    }
+
+    const buffer = await file.arrayBuffer();
+
+    setFileBuffer(buffer);
+    setUploadedSigImage(null);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const downloadPDFbyID = async (
+    updateProgress: (progress: number) => void
+  ) => {
+    const getUploadID = localStorage.getItem('IdUpload');
+    console.log('Id Doc:', getUploadID);
+
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate()}${
+      currentDate.getMonth() + 1
+    }${currentDate.getFullYear()}`;
+
+    const param = {
+      FileId: getUploadID,
+    };
+
+    try {
+      const fileData = await apiService.downloadFile(param);
+      const blob = new Blob([fileData], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${formattedDate}_BNI_SignatureNonCertificate.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      updateProgress(100);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      throw error;
+    }
+  };
+
+  const exportPDF = async () => {
+    if (!fileBufferArray || !uploadedSigImage) {
+      alert('Upload PDF dan tanda tangan terlebih dahulu!');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Hitung skala dari tampilan ke ukuran asli PDF
+      const scaleX = pdfOriginalSize.width / pdfRenderedSize.width;
+      const scaleY = pdfOriginalSize.height / pdfRenderedSize.height;
+
+      const x = position.x * scaleX;
+      const y = (pdfRenderedSize.height - position.y - sigSize.h) * scaleY;
+      const width = sigSize.w * scaleX;
+      const height = sigSize.h * scaleY;
+
+      await uploadModifyToService({
+        documentURL: uploadedDocument, // tidak digunakan karena kita punya file buffer
+        capturedSignature: uploadedSigImage, // base64 image
+        selectedImageUrl: uploadedSigImage, // tidak pakai image mode
+        currentPage: currentPage + 1, // karena page dimulai dari 1
+        xCoordinate: x,
+        yCoordinate: y,
+        pdfPaperWidth: pdfOriginalSize.width,
+        pdfPaperHeight: pdfOriginalSize.height,
+        scale: 1, // tidak perlu penyesuaian karena posisi sudah dikalkulasi
+        fileBytesOverride: fileBufferArray, // tambahan argumen jika perlu override
+        width,
+        height,
+      });
+
+      await downloadPDFbyID(setProgress);
+
+      alert('Berhasil mengunggah PDF yang telah dimodifikasi.');
+    } catch (err) {
+      console.error('Error uploading PDF:', err);
+      alert('Gagal mengunggah PDF');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="p-6 max-w-4xl mx-auto space-y-4">
+      <Input type="file" accept="application/pdf" onChange={handleUpload} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {fileBuffer && (
+        <>
+          <div className="flex items-center gap-4">
+            <select
+              className="p-2 border rounded"
+              onChange={(e) => setCurrentPage(+e.target.value)}
+              value={currentPage}
+            >
+              {Array.from({ length: numPages }, (_, i) => (
+                <option key={i} value={i}>
+                  Halaman {i + 1}
+                </option>
+              ))}
+            </select>
+
+            <label className="cursor-pointer flex items-center gap-2 p-2 border rounded hover:bg-gray-100">
+              <Upload className="w-5 h-5" />
+              <span className="text-sm">Upload Tanda Tangan</span>
+              <input
+                type="file"
+                accept="image/png, image/jpeg"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && file.size <= 2 * 1024 * 1024) {
+                    const reader = new FileReader();
+                    reader.onload = () =>
+                      setUploadedSigImage(reader.result as string);
+                    reader.readAsDataURL(file);
+                  } else {
+                    alert('Maksimal ukuran gambar adalah 2MB.');
+                  }
+                }}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          <div className="relative border" style={{ width: 'fit-content' }}>
+            <PDFRenderer
+              fileBuffer={fileBuffer}
+              currentPage={currentPage}
+              onLoad={(n) => setNumPages(n)}
+              onPageSize={(size) => setPdfRenderedSize(size)}
+              onRenderScaleChange={(scale, w, h) => {
+                setPdfOriginalSize({ width: w, height: h });
+              }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+            {uploadedSigImage && (
+              <Rnd
+                size={{ width: sigSize.w, height: sigSize.h }}
+                position={{ x: position.x, y: position.y }}
+                onDragStop={(_, d) => setPosition({ x: d.x, y: d.y })}
+                onResizeStop={(_, __, ref, ___, pos) => {
+                  setSigSize({
+                    w: parseFloat(ref.style.width),
+                    h: parseFloat(ref.style.height),
+                  });
+                  setPosition(pos);
+                }}
+                bounds="parent"
+                lockAspectRatio={true}
+                style={{
+                  zIndex: 10,
+                  border: '2px dashed #3b82f6',
+                  borderRadius: '4px',
+                }}
+              >
+                <img
+                  src={uploadedSigImage}
+                  alt="signature"
+                  className="w-full h-full object-contain"
+                  style={{ pointerEvents: 'none', userSelect: 'none' }}
+                />
+              </Rnd>
+            )}
+          </div>
+
+          <div className="flex gap-4">
+            <Button
+              variant="secondary"
+              onClick={() => setUploadedSigImage(null)}
+              disabled={!uploadedSigImage}
+            >
+              Hapus Tanda Tangan
+            </Button>
+            <Button onClick={exportPDF} disabled={loading}>
+              {loading ? 'Mengekspor...' : 'Ekspor PDF Bertanda Tangan'}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
