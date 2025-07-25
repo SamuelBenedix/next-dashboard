@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Rnd } from 'react-rnd';
 import { Upload, UploadCloud, Pencil } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -169,6 +168,8 @@ export default function PdfPage() {
     }
   };
 
+  console.log('progress', progress);
+
   return (
     <div>
       <Header />
@@ -255,6 +256,9 @@ export default function PdfPage() {
                     console.log('pdf h', h);
                     setPdfOriginalSize({ width: w, height: h });
                   }}
+                  signatureURL={uploadedSigImage}
+                  position={positionSign}
+                  sigSize={sigSize}
                 />
 
                 {uploadedSigImage && (

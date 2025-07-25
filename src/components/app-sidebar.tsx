@@ -1,10 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { GalleryVerticalEnd, PieChart, DockIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  FileText,
+  Inbox,
+  FilePen,
+  ActivitySquare,
+  LayoutDashboard,
+  GalleryVerticalEnd,
+} from 'lucide-react';
 import { NavProjects } from '@/components/nav-projects';
 import { NavUser } from '@/components/nav-user';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +21,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { Services } from '@/services/serviceapi';
 
 // This is sample data.
 const data = {
@@ -32,32 +42,72 @@ const data = {
     {
       name: 'All Documents',
       url: '/documents',
-      icon: DockIcon,
+      icon: FileText, // Ikon dokumen
     },
     {
-      name: 'inbox',
+      name: 'Inbox',
       url: '/inbox',
-      icon: PieChart,
+      icon: Inbox, // Ikon kotak masuk
     },
     {
-      name: 'draft',
+      name: 'Draft',
       url: '/draft',
-      icon: PieChart,
+      icon: FilePen, // Ikon dokumen yang sedang diedit
     },
     {
-      name: 'monitoring',
+      name: 'Monitoring',
       url: '/monitoring',
-      icon: PieChart,
+      icon: ActivitySquare, // Ikon pemantauan / monitoring
     },
     {
-      name: 'dashboard',
+      name: 'Dashboard',
       url: '/dashboard',
-      icon: PieChart,
+      icon: LayoutDashboard, // Ikon dashboard umum
     },
   ],
 };
 
+const apiService = new Services();
+
+interface UserDetail {
+  Nama_Pegawai: string;
+  Npp: string;
+  Role_Name: string;
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userDetailString = localStorage.getItem('jwtParse');
+
+    if (userDetailString) {
+      const parsed = JSON.parse(userDetailString);
+      setUserDetail(parsed);
+    } else if (
+      typeof window !== 'undefined' &&
+      window.location.href.split('/').length === 6
+    ) {
+      const urlParts = window.location.href.split('/');
+      const token = urlParts[urlParts.length - 1];
+      const idDoc = urlParts[urlParts.length - 2];
+      const jWTParse = apiService.parseJwt(token);
+
+      sessionStorage.setItem('id', idDoc);
+      localStorage.setItem('jwT_Token', token);
+      localStorage.setItem('jwtParse', JSON.stringify(jWTParse));
+
+      setUserDetail({
+        Nama_Pegawai: jWTParse.Nama_Pegawai,
+        Npp: jWTParse.Npp,
+        Role_Name: jWTParse.Role_Name,
+      });
+    } else {
+      router.push('/');
+    }
+  }, [router]);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -69,7 +119,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          user={
+            userDetail
+              ? {
+                  name: userDetail.Nama_Pegawai,
+                  email: userDetail.Npp,
+                  avatar: '/avatars/default.jpg', // Provide a default avatar or map accordingly
+                }
+              : {
+                  name: 'Guest',
+                  email: 'guest@example.com',
+                  avatar: '/avatars/default.jpg',
+                }
+          }
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
