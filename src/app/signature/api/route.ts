@@ -57,6 +57,7 @@ export async function POST(req: Request) { // App Router API routes use standard
    },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
  } catch (err: any) {
   console.error('SIGN ERROR:', err.message || err);
   return NextResponse.json(

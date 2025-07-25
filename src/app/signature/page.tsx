@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useState } from 'react';
@@ -166,6 +168,9 @@ export default function PdfPage() {
               onRenderScaleChange={(scale, w, h) => {
                 setPdfOriginalSize({ width: w, height: h });
               }}
+              signatureURL={uploadedSigImage}
+              position={position}
+              sigSize={sigSize}
             />
 
             {uploadedSigImage && (

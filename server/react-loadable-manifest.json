@@ -1,0 +1,60 @@
+{
+  "app/dashboard/PieChartDocuments.tsx -> react-apexcharts": {
+    "id": 8699,
+    "files": [
+      "static/chunks/477d4af2.1841a27f77dfa205.js",
+      "static/chunks/699.f775322465c62c01.js"
+    ]
+  },
+  "app/dashboard/charts/BarChart.tsx -> react-apexcharts": {
+    "id": 8699,
+    "files": [
+      "static/chunks/477d4af2.1841a27f77dfa205.js",
+      "static/chunks/699.f775322465c62c01.js"
+    ]
+  },
+  "app/dashboard/charts/GroupedBarChart.tsx -> react-apexcharts": {
+    "id": 8699,
+    "files": [
+      "static/chunks/477d4af2.1841a27f77dfa205.js",
+      "static/chunks/699.f775322465c62c01.js"
+    ]
+  },
+  "app/dashboard/charts/PieChart.tsx -> react-apexcharts": {
+    "id": 8699,
+    "files": [
+      "static/chunks/477d4af2.1841a27f77dfa205.js",
+      "static/chunks/699.f775322465c62c01.js"
+    ]
+  },
+  "app/documents/create/page.tsx -> @/components/ui/PdfRenderer": {
+    "id": 4360,
+    "files": [
+      "static/chunks/464.1351b4acc7d86c21.js",
+      "static/chunks/360.e72bdead815711b4.js"
+    ]
+  },
+  "app/page.tsx -> @/components/ui/PdfRenderer": {
+    "id": 4360,
+    "files": [
+      "static/chunks/7a49ec60-40207b0693eac0bb.js",
+      "static/chunks/464.1351b4acc7d86c21.js",
+      "static/chunks/195.99ef959621c2eb26.js"
+    ]
+  },
+  "app/sign-now/[id]/page.tsx -> @/components/ui/PdfRenderer": {
+    "id": 4360,
+    "files": [
+      "static/chunks/464.1351b4acc7d86c21.js",
+      "static/chunks/360.e72bdead815711b4.js"
+    ]
+  },
+  "app/signature/page.tsx -> @/components/ui/PdfRenderer": {
+    "id": 4360,
+    "files": [
+      "static/chunks/7a49ec60-40207b0693eac0bb.js",
+      "static/chunks/464.1351b4acc7d86c21.js",
+      "static/chunks/195.99ef959621c2eb26.js"
+    ]
+  }
+}

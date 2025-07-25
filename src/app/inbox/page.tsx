@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -95,7 +96,8 @@ export default function DataPage() {
     formData.append('idFile', id.toString());
     try {
       const res = await apiService.downloadCertified(formData);
-      const blobUrl = URL.createObjectURL(res.data);
+      const blob = new Blob([res.data]);
+      const blobUrl = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
       link.href = blobUrl;

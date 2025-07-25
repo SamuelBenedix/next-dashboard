@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // /Users/samuelbenedict/Documents/GitHub/next-dashboard/src/app/api/sign/route.ts
 
 import { PDFDocument } from 'pdf-lib';

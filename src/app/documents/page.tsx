@@ -95,7 +95,8 @@ export default function DataPage() {
     formData.append('idFile', id.toString());
     try {
       const res = await apiService.downloadCertified(formData);
-      const blobUrl = URL.createObjectURL(res.data);
+      const blob = new Blob([res.data]);
+      const blobUrl = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -112,10 +113,12 @@ export default function DataPage() {
   useEffect(() => {
     logMonitoring();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     updatePaginatedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredDocs, page]);
 
   return (

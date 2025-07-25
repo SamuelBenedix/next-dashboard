@@ -53,6 +53,7 @@ export default async function handler(
     res.setHeader('Content-Disposition', 'attachment; filename="signed.pdf"');
     // Send the Buffer directly
     res.send(Buffer.from(signedPdfBytes));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) { // Use 'any' for now to easily log error properties
     console.error('SIGN ERROR:', err.message || err);
     res.status(500).send(`Failed to sign PDF: ${err.message || 'Unknown error'}`);

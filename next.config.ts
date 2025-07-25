@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       use: "raw-loader",
     });
 
+
     // Add Buffer polyfill for client-side
     if (!isServer) {
       config.resolve.fallback = {

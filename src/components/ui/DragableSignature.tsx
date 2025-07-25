@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 // components/DraggableSignature.tsx
 import { Rnd } from 'react-rnd';
 

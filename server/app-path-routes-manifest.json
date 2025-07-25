@@ -1,0 +1,18 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/documents/create/api/route": "/documents/create/api",
+  "/signature/api/route": "/signature/api",
+  "/data/page": "/data",
+  "/dashboard/page": "/dashboard",
+  "/documents/create/page": "/documents/create",
+  "/draft/page": "/draft",
+  "/login/page": "/login",
+  "/monitoring/page": "/monitoring",
+  "/signature/page": "/signature",
+  "/sign-now/[id]/page": "/sign-now/[id]",
+  "/documents/page": "/documents",
+  "/inbox/page": "/inbox",
+  "/validation/page": "/validation",
+  "/page": "/"
+}

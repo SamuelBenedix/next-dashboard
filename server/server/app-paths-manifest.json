@@ -1,0 +1,18 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/documents/create/api/route": "app/documents/create/api/route.js",
+  "/signature/api/route": "app/signature/api/route.js",
+  "/data/page": "app/data/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/documents/create/page": "app/documents/create/page.js",
+  "/draft/page": "app/draft/page.js",
+  "/login/page": "app/login/page.js",
+  "/monitoring/page": "app/monitoring/page.js",
+  "/signature/page": "app/signature/page.js",
+  "/sign-now/[id]/page": "app/sign-now/[id]/page.js",
+  "/documents/page": "app/documents/page.js",
+  "/inbox/page": "app/inbox/page.js",
+  "/validation/page": "app/validation/page.js",
+  "/page": "app/page.js"
+}

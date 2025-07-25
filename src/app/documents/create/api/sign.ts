@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PDFDocument } from 'pdf-lib';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
