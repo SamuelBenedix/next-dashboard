@@ -1,4 +1,4 @@
-# Tahap 1: Gunakan image Node.js untuk build
+# Step 1: Build Next.js
 FROM node:18-alpine AS builder
 
 WORKDIR /app
@@ -8,17 +8,18 @@ COPY . .
 RUN npm install
 RUN npm run build
 
-# Tahap 2: Buat image production
+# Step 2: Run with Node.js standalone output
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy output build dari builder
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+ENV PORT=3000
 
 EXPOSE 3000
 
-ENV NODE_ENV=production
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
