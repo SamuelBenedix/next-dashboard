@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import webpack from 'webpack'; // Import webpack
 
 const nextConfig: NextConfig = {
+  output: 'standalone', // ✅ Tambahkan ini
   images: {
     domains: ["img.freepik.com", "veterinaire-tour-hassan.com"],
   },
