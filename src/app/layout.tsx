@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'My App',
-  description: 'A Next.js app',
+  title: 'Sign Plus',
+  description: 'Sign Plus By BNI',
 };
 
 export default function RootLayout({
