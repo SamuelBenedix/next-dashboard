@@ -8,12 +8,13 @@ import { Rnd } from 'react-rnd';
 import { Label } from '@/components/ui/label';
 import { AppLayout } from '@/components';
 import { Services } from '@/services/serviceapi';
-import Swal from 'sweetalert2';
 import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useAlertDialog } from '@/hooks/useAlertDialog';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
   ssr: false,
@@ -23,27 +24,31 @@ export default function SignNowPage() {
   const router = useRouter();
   const { id } = useParams();
   const apiService = new Services();
+  const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
+  const { showAlertDialog, AlertDialog } = useAlertDialog();
+  const { showLoading, hideLoading } = useLoadingOverlay();
   const docId = typeof id === 'string' ? id : '';
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [desc, setDesc] = useState('');
   const [reason, setReason] = useState('');
-  const [signatureX, setSignatureX] = useState(100);
-  const [signatureY, setSignatureY] = useState(100);
-  const [signatureWidth, setSignatureWidth] = useState(120);
-  const [signatureHeight, setSignatureHeight] = useState(80);
+  const [pdfRenderedSize, setPdfRenderedSize] = useState({
+    width: 0,
+    height: 0,
+  });
+  const [positionSign, setPositionSign] = useState({
+    x: 64,
+    y: 176,
+  });
+  const [sigSize, setSigSize] = useState({ w: 100, h: 100 });
   const [file, setFile] = useState<File | null>(null);
-  const pdfPaperHeight = 842;
-  const pdfPaperWidth = 595;
-
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!docId) return;
 
     const load = async () => {
-      setIsLoading(true);
+      showLoading('Memuat Data Document');
       try {
         const formData = new FormData();
         formData.append('idFile', docId);
@@ -56,10 +61,14 @@ export default function SignNowPage() {
         setFile(file);
         setFileBuffer(response.data);
       } catch (error) {
-        console.error('Failed to load PDF:', error);
-        Swal.fire('Error', 'Gagal memuat dokumen', 'error');
+        console.log('error', error);
+        await showAlertDialog({
+          title: 'Error',
+          description: 'Gagal Memuat Documetn',
+          variant: 'destructive',
+        });
       } finally {
-        setIsLoading(false);
+        hideLoading();
       }
     };
 
@@ -68,20 +77,17 @@ export default function SignNowPage() {
 
   const handleSubmit = async (param: 'sign' | 'reject') => {
     if (!id) return;
-    const confirmText =
-      param === 'sign'
-        ? 'You are about to sign this document?'
-        : 'You are about to reject this document?';
 
-    const result = await Swal.fire({
+    const confirmed = await showConfirmDialog({
       title: 'Are you sure?',
-      text: confirmText,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: `Yes, ${param} it!`,
+      description:
+        param === 'sign'
+          ? 'You are about to sign this document?'
+          : 'You are about to reject this document?',
+      confirmText: `Yes, ${param}!`,
     });
 
-    if (!result.isConfirmed) return;
+    if (!confirmed) return;
 
     const formData = new FormData();
 
@@ -92,30 +98,36 @@ export default function SignNowPage() {
     formData.append('IsDraft', 'false');
     formData.append('IsApprove', param === 'sign' ? 'true' : 'false');
 
+    const x = positionSign.x + 65;
+    const y = pdfRenderedSize.height - positionSign.y - sigSize.h - 240;
+    const width = sigSize.w;
+
     if (param === 'sign') {
-      formData.append('Xloc', Math.round(signatureX).toString());
-      formData.append('Yloc', Math.round(signatureY).toString());
-      const sizeAdjustment = pdfPaperWidth > pdfPaperHeight ? 20 : 10;
-      formData.append('Size', (signatureWidth - sizeAdjustment).toString());
+      formData.append('Xloc', Math.round(x).toString());
+      formData.append('Yloc', Math.round(y).toString());
+      formData.append('Size', width.toString());
       formData.append('PageNumber', currentPage.toString());
       formData.append('SendToNpp', '');
     }
 
     try {
-      setIsLoading(true);
+      showLoading();
       const response = await apiService.signCertified(formData);
-      Swal.fire(
-        'Validation Success',
-        response.data.data.message,
-        'success'
-      ).then(() => {
-        router.push('/documents');
+      await showAlertDialog({
+        title: 'Success',
+        description: response.data.data.message || 'Operation completed.',
+        variant: 'success',
       });
+      router.push('/documents');
     } catch (error) {
       console.error('Error processing document:', error);
-      Swal.fire('Error', `Failed to ${param} document`, 'error');
+      await showAlertDialog({
+        title: 'Error',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false);
+      hideLoading();
     }
   };
 
@@ -149,30 +161,30 @@ export default function SignNowPage() {
                   fileBuffer={fileBuffer}
                   currentPage={currentPage}
                   onLoad={setNumPages}
-                  onPageSize={() => {}}
+                  onPageSize={setPdfRenderedSize}
                   signatureURL=""
-                  position={{ x: signatureX, y: signatureY }}
-                  sigSize={{ w: signatureWidth, h: signatureHeight }}
+                  position={positionSign}
+                  sigSize={sigSize}
                   onRenderScaleChange={() => {}}
                 />
 
                 <Rnd
                   bounds="parent"
                   default={{
-                    x: signatureX,
-                    y: signatureY,
-                    width: signatureWidth,
-                    height: signatureHeight,
+                    x: positionSign.x,
+                    y: positionSign.y,
+                    width: sigSize.w,
+                    height: sigSize.h,
                   }}
                   onDragStop={(_, d) => {
-                    setSignatureX(d.x);
-                    setSignatureY(d.y);
+                    setPositionSign({ x: d.x, y: d.y });
                   }}
-                  onResizeStop={(_, __, ref, ___, position) => {
-                    setSignatureWidth(ref.offsetWidth);
-                    setSignatureHeight(ref.offsetHeight);
-                    setSignatureX(position.x);
-                    setSignatureY(position.y);
+                  onResizeStop={(_, __, ref) => {
+                    console.log();
+                    setSigSize({
+                      w: parseFloat(ref.style.width),
+                      h: parseFloat(ref.style.height),
+                    });
                   }}
                   className="z-50"
                 >
@@ -213,31 +225,25 @@ export default function SignNowPage() {
                 onChange={(e) => setReason(e.target.value)}
               />
             </div>
-
-            <Button onClick={() => handleSubmit('sign')}>
-              {isLoading ? 'Memproses...' : 'Tandatangani Dokumen'}
-            </Button>
-
             <Button
-              className="ml-3"
+              className="mr-3"
               variant="destructive"
               onClick={() => handleSubmit('reject')}
             >
-              {isLoading ? 'Memproses...' : 'Tolak Dokumen'}
+              Tolak Document
+            </Button>
+
+            <Button
+              disabled={reason.length === 0 || desc.length === 0}
+              onClick={() => handleSubmit('sign')}
+            >
+              Tandatangani Dokumen
             </Button>
           </div>
         </div>
       </div>
-
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2 bg-white p-6 rounded-xl shadow-lg">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Memproses data...</p>
-          </div>
-        </div>
-      )}
+      {ConfirmDialog}
+      {AlertDialog}
     </AppLayout>
   );
 }

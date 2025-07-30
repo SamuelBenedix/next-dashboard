@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 const apiService = new Services();
 
@@ -59,6 +60,7 @@ export default function Page() {
   const [seriesDataLogin, setSeriesDataLogin] = useState([
     { name: 'Login', data: [] as number[] },
   ]);
+  const { showLoading, hideLoading } = useLoadingOverlay();
   const [categories, setCategories] = useState<string[]>([]);
   const [chartLabels, setChartLabels] = useState<string[]>([]);
   const [chartSeries, setChartSeries] = useState<number[]>([]);
@@ -67,13 +69,25 @@ export default function Page() {
   const [seriesDataOS, setSeriesDataOS] = useState<SeriesData[]>([]);
 
   useEffect(() => {
-    const userDetail = JSON.parse(localStorage.getItem('jwtParse') || '{}');
-    if (userDetail?.Role_Name?.includes('Admin')) {
-      updateChartDataLogin();
-      updateChartDataOS();
-      fetchDataBrowser();
-    } else {
-    }
+    const loadData = async () => {
+      const userDetail = JSON.parse(localStorage.getItem('jwtParse') || '{}');
+      showLoading('Memuat data grafik...');
+      try {
+        if (userDetail?.Role_Name?.includes('Admin')) {
+          await Promise.all([
+            updateChartDataLogin(),
+            updateChartDataOS(),
+            fetchDataBrowser(),
+          ]);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        hideLoading();
+      }
+    };
+
+    loadData();
   }, []);
 
   const updateChartDataLogin = async () => {
@@ -81,8 +95,6 @@ export default function Page() {
       const response = await apiService.loginMonitoring(selectedLogType);
       const categorie: string[] = [];
       const dataseries: number[] = [];
-
-      console.log('response', response);
 
       response.data.forEach((item: BrowserData) => {
         categorie.push(item.keyName);

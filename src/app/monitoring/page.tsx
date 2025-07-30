@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from './dataTable';
 import { getColumns } from './columns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 interface DocumentItem {
   id: number;
@@ -23,7 +24,7 @@ interface DocumentItem {
 export default function DataPage() {
   const apiService = new Services();
   const router = useRouter();
-
+  const { showLoading, hideLoading } = useLoadingOverlay();
   const [docs, setDocs] = useState<DocumentItem[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -94,6 +95,7 @@ export default function DataPage() {
   const download = async (id: number, fileName: string) => {
     const formData = new FormData();
     formData.append('idFile', id.toString());
+    showLoading();
     try {
       const res = await apiService.downloadCertified(formData);
       const blob = new Blob([res.data]);
@@ -108,12 +110,25 @@ export default function DataPage() {
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download error:', error);
+    } finally {
+      hideLoading();
     }
   };
 
   useEffect(() => {
-    logMonitoring();
-    fetchData();
+    const fetchAll = async () => {
+      showLoading();
+      try {
+        await logMonitoring();
+        await fetchData();
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        hideLoading();
+      }
+    };
+
+    fetchAll();
   }, []);
 
   useEffect(() => {

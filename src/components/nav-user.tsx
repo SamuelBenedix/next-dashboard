@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 export function NavUser({
   user,
@@ -29,13 +30,22 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const { showLoading, hideLoading } = useLoadingOverlay();
 
-  const logout = () => {
-    localStorage.removeItem('message');
-    localStorage.removeItem('jwT_Token');
-    localStorage.removeItem('refresh_Token');
-    localStorage.removeItem('jwtParse');
-    router.push('/');
+  const logout = async () => {
+    showLoading();
+    try {
+      localStorage.removeItem('message');
+      localStorage.removeItem('jwT_Token');
+      localStorage.removeItem('refresh_Token');
+      localStorage.removeItem('jwtParse');
+
+      await router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      hideLoading();
+    }
   };
 
   return (
@@ -59,7 +69,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="min-w-56 rounded-lg"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
@@ -78,8 +88,8 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem>
-              <LogOut onClick={logout} />
+            <DropdownMenuItem onClick={logout} className="cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

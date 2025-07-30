@@ -16,7 +16,6 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { ReactNode } from 'react';
-import { SearchInput } from './ui/search-input';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation'; // for App Router
 
@@ -37,9 +36,6 @@ export default function AppLayout({
   isCreate,
 }: AppLayoutProps) {
   const router = useRouter();
-  const handleSearch = (query: string) => {
-    console.log('Search query:', query);
-  };
 
   return (
     <SidebarProvider>
@@ -78,7 +74,7 @@ export default function AppLayout({
             <div></div>
           ) : (
             <div className="min-w-[500px] max-w-sm w-full flex">
-              <SearchInput onSearch={handleSearch} placeholder="Search..." />
+              <div className="relative w-full"></div>
               <Button
                 className="mx-5 bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => router.push('/documents/create')}

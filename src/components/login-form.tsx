@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Swal from 'sweetalert2';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useAlertDialog } from '@/hooks/useAlertDialog';
 
 export function LoginForm({
   className,
@@ -18,7 +20,9 @@ export function LoginForm({
 }: React.ComponentProps<'div'>) {
   const router = useRouter();
   const apiService = new Services();
-
+  const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
+  const { showLoading, hideLoading } = useLoadingOverlay();
+  const { showAlertDialog, AlertDialog } = useAlertDialog();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,15 +71,15 @@ export function LoginForm({
 
   const validateLogin = async () => {
     if (!username || !password) {
-      Swal.fire({
-        icon: 'warning',
+      await showConfirmDialog({
         title: 'Oops...',
-        text: 'Please fill in both email and password!',
-        confirmButtonColor: '#005D6B',
+        description: 'Please fill in both email and password!',
+        confirmText: 'OK',
+        variant: 'warning', // optional, if your dialog supports it
       });
       return;
     }
-
+    showLoading();
     setIsLoading(true);
 
     try {
@@ -99,11 +103,10 @@ export function LoginForm({
 
         router.push('/documents');
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Login Failed',
-          text: res.data.message || 'An unexpected error occurred',
-          confirmButtonColor: '#005D6B',
+        await showAlertDialog({
+          title: 'Error',
+          description: 'Something went wrong. Please try again.',
+          variant: 'destructive',
         });
 
         formRef.current?.reset();
@@ -112,13 +115,14 @@ export function LoginForm({
       }
     } catch (err) {
       console.error('Login error:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Server Error',
-        text: 'Something went wrong. Please try again later.',
-        confirmButtonColor: '#005D6B',
+
+      await showAlertDialog({
+        title: 'Error',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
       });
     } finally {
+      hideLoading();
       setIsLoading(false);
     }
   };
@@ -203,6 +207,8 @@ export function LoginForm({
           </div>
         </CardContent>
       </Card>
+      {ConfirmDialog}
+      {AlertDialog}
     </div>
   );
 }

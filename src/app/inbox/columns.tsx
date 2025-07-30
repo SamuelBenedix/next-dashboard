@@ -82,6 +82,7 @@ export const getColumns = ({
         | 'secondary'
         | 'destructive'
         | 'outline'
+        | 'success'
         | null
         | undefined = 'default';
       let label = 'Unknown';
@@ -90,7 +91,7 @@ export const getColumns = ({
         case 1:
         case 3:
           label = 'Completed';
-          color = 'default'; // atau 'success' jika kamu pakai varian lain
+          color = 'success'; // atau 'success' jika kamu pakai varian lain
           break;
         case 0:
         case 2:

@@ -10,8 +10,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { AlertCircle, CheckCircle2, Info, XCircle } from 'lucide-react'; // Optional icons
 
 let resolver: (result: boolean) => void = () => {};
+
+type Variant = 'info' | 'warning' | 'error' | 'success';
 
 export function useConfirmDialog() {
   const [open, setOpen] = useState(false);
@@ -20,6 +23,7 @@ export function useConfirmDialog() {
     description: '',
     confirmText: 'Confirm',
     cancelText: 'Cancel',
+    variant: 'info' as Variant,
   });
 
   const showConfirmDialog = useCallback(
@@ -28,12 +32,14 @@ export function useConfirmDialog() {
       description: string;
       confirmText?: string;
       cancelText?: string;
+      variant?: Variant;
     }) => {
       setOptions({
         title: opts.title,
         description: opts.description,
         confirmText: opts.confirmText || 'Confirm',
         cancelText: opts.cancelText || 'Cancel',
+        variant: opts.variant || 'info',
       });
       setOpen(true);
       return new Promise<boolean>((resolve) => {
@@ -48,18 +54,48 @@ export function useConfirmDialog() {
     resolver(result);
   };
 
+  const getVariantStyles = (variant: Variant) => {
+    switch (variant) {
+      case 'warning':
+        return {
+          icon: <AlertCircle className="text-yellow-500 w-6 h-6" />,
+          confirmButton: 'bg-yellow-500 text-white hover:bg-yellow-600',
+        };
+      case 'error':
+        return {
+          icon: <XCircle className="text-red-500 w-6 h-6" />,
+          confirmButton: 'bg-red-600 text-white hover:bg-red-700',
+        };
+      case 'success':
+        return {
+          icon: <CheckCircle2 className="text-green-600 w-6 h-6" />,
+          confirmButton: 'bg-green-600 text-white hover:bg-green-700',
+        };
+      default:
+        return {
+          icon: <Info className="text-blue-600 w-6 h-6" />,
+          confirmButton: 'bg-blue-600 text-white hover:bg-blue-700',
+        };
+    }
+  };
+
+  const { icon, confirmButton } = getVariantStyles(options.variant);
+
   const ConfirmDialog = (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{options.title}</DialogTitle>
-          <DialogDescription>{options.description}</DialogDescription>
+        <DialogHeader className="flex flex-row items-start gap-3">
+          {icon}
+          <div>
+            <DialogTitle>{options.title}</DialogTitle>
+            <DialogDescription>{options.description}</DialogDescription>
+          </div>
         </DialogHeader>
-        <DialogFooter className="flex justify-end gap-2">
+        <DialogFooter className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={() => handleClose(false)}>
             {options.cancelText}
           </Button>
-          <Button onClick={() => handleClose(true)}>
+          <Button className={confirmButton} onClick={() => handleClose(true)}>
             {options.confirmText}
           </Button>
         </DialogFooter>
