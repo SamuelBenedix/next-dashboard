@@ -44,12 +44,12 @@ export default function PdfPage() {
     height: 0,
   });
 
-  // Signature Box States
   const [showSignatureBox, setShowSignatureBox] = useState(false);
-  const [signatureX, setSignatureX] = useState(0);
-  const [signatureY, setSignatureY] = useState(0);
-  const [signatureWidth, setSignatureWidth] = useState(200);
-  const [signatureHeight, setSignatureHeight] = useState(100);
+  const [positionSign, setPositionSign] = useState({
+    x: 64,
+    y: 176,
+  });
+  const [sigSize, setSigSize] = useState({ w: 100, h: 100 });
 
   // Form Fields
   const [reason, setReason] = useState('');
@@ -137,11 +137,15 @@ export default function PdfPage() {
         if (file) formData.append('Document', file);
         if (reason) formData.append('Reason', reason);
         if (recipient) formData.append('SendToNpp', recipient);
+        const x = positionSign.x + 65;
+        const y = pdfRenderedSize.height - positionSign.y - sigSize.h - 240;
+
+        const width = sigSize.w;
 
         if (param === 'sign') {
-          formData.append('Xloc', Math.round(signatureX).toString());
-          formData.append('Yloc', Math.round(signatureY).toString());
-          formData.append('Size', signatureWidth.toString());
+          formData.append('Xloc', Math.round(x).toString());
+          formData.append('Yloc', Math.round(y).toString());
+          formData.append('Size', width.toString());
           formData.append('PageNumber', currentPage.toString());
           formData.append('IsDraft', 'false');
         } else {
@@ -203,8 +207,8 @@ export default function PdfPage() {
                   onLoad={setNumPages}
                   onPageSize={setPdfRenderedSize}
                   signatureURL={''} // Provide actual signature image URL if available
-                  position={{ x: signatureX, y: signatureY }}
-                  sigSize={{ w: signatureWidth, h: signatureHeight }}
+                  position={positionSign}
+                  sigSize={sigSize}
                   onRenderScaleChange={() => {}} // Provide actual handler if needed
                 />
 
@@ -212,20 +216,20 @@ export default function PdfPage() {
                   <Rnd
                     bounds="parent"
                     default={{
-                      x: pdfRenderedSize.height / 2 - 450,
-                      y: pdfRenderedSize.height / 2,
-                      width: signatureWidth,
-                      height: signatureHeight,
+                      x: positionSign.x,
+                      y: positionSign.y,
+                      width: sigSize.w,
+                      height: sigSize.h,
                     }}
                     onDragStop={(_, d) => {
-                      setSignatureX(d.x);
-                      setSignatureY(d.y);
+                      setPositionSign({ x: d.x, y: d.y });
                     }}
-                    onResizeStop={(_, __, ref, ___, position) => {
-                      setSignatureWidth(ref.offsetWidth);
-                      setSignatureHeight(ref.offsetHeight);
-                      setSignatureX(position.x);
-                      setSignatureY(position.y);
+                    onResizeStop={(_, __, ref) => {
+                      console.log();
+                      setSigSize({
+                        w: parseFloat(ref.style.width),
+                        h: parseFloat(ref.style.height),
+                      });
                     }}
                     className="z-50"
                   >
@@ -296,13 +300,11 @@ export default function PdfPage() {
                   </div>
                 )}
                 <div className="grid gap-2 mt-3">
-                  <Label htmlFor="signature-desc">
-                    Konfirmasi Tanda Tangan
-                  </Label>
+                  <Label htmlFor="signature-desc">Reason</Label>
                   <Input
                     id="signature-desc"
                     type="text"
-                    placeholder="Masukkan deskripsi"
+                    placeholder="Masukkan Alasan"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                   />

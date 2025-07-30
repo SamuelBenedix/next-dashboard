@@ -140,9 +140,6 @@ export default function PdfPage() {
       const width = sigSize.w;
       const height = sigSize.h - 20;
 
-      console.log('width', width);
-      console.log('height', height);
-
       await uploadModifyToService({
         documentURL: uploadedDocument, // tidak digunakan karena kita punya file buffer
         capturedSignature: uploadedSigImage, // base64 image
@@ -249,12 +246,9 @@ export default function PdfPage() {
                   currentPage={currentPage}
                   onLoad={(n) => setNumPages(n)}
                   onPageSize={(size) => {
-                    console.log('size', size);
                     setPdfRenderedSize(size);
                   }}
                   onRenderScaleChange={(scale, w, h) => {
-                    console.log('pdf w', w);
-                    console.log('pdf h', h);
                     setPdfOriginalSize({ width: w, height: h });
                   }}
                   signatureURL={uploadedSigImage}
