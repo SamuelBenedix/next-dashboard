@@ -82,6 +82,7 @@ export const getColumns = ({
         | 'secondary'
         | 'destructive'
         | 'outline'
+        | 'success'
         | null
         | undefined = 'default';
       let label = 'Unknown';
@@ -90,7 +91,7 @@ export const getColumns = ({
         case 1:
         case 3:
           label = 'Completed';
-          color = 'default'; // atau 'success' jika kamu pakai varian lain
+          color = 'success'; // atau 'success' jika kamu pakai varian lain
           break;
         case 0:
         case 2:
@@ -113,7 +114,7 @@ export const getColumns = ({
         <div className="flex items-center justify-center gap-2">
           {payment.status === 3 ? (
             <Button
-              variant="default"
+              variant={'default'}
               className="h-8 px-3"
               onClick={() => onDownload(payment.id, payment.fileName)}
             >
@@ -121,8 +122,8 @@ export const getColumns = ({
             </Button>
           ) : (
             <Button
-              variant="default"
-              className="h-8 px-3"
+              variant={'default'}
+              className="h-8 px-3 "
               onClick={() => onSign(payment.id)}
             >
               Sign Now

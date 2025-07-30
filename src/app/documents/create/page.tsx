@@ -8,14 +8,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AppLayout } from '@/components';
 import { Services } from '@/services/serviceapi';
-import Swal from 'sweetalert2';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import InputDropdown from '@/components/ui/input-dropdown';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useAlertDialog } from '@/hooks/useAlertDialog';
 
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
   ssr: false,
@@ -30,6 +30,8 @@ type Pegawai = {
 
 export default function PdfPage() {
   const router = useRouter();
+  const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
+  const { showAlertDialog, AlertDialog } = useAlertDialog();
   const apiService = new Services(); // ✅ Create an instance
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -92,56 +94,51 @@ export default function PdfPage() {
 
   async function handleSubmit(param: 'draft' | 'send' | 'sign') {
     if (!file && param !== 'send') {
-      Swal.fire('Error', 'Please upload a PDF document', 'error');
+      await showAlertDialog({
+        title: 'Error',
+        description: 'Please upload a PDF document',
+        variant: 'destructive',
+      });
       return;
     }
-
     try {
-      const confirm = await Swal.fire({
+      const confirmed = await showConfirmDialog({
         title: 'Are you sure?',
-        text:
+        description:
           param === 'draft'
             ? 'You are about to save this document as a draft.'
             : param === 'sign'
             ? 'You are about to sign this document.'
             : 'You are about to send this document.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: `Yes, ${param}!`,
+        confirmText: `Yes, ${param}!`,
       });
-
-      if (!confirm.isConfirmed) return;
+      if (!confirmed) return;
       setIsLoading(true);
-
-      // Form validation
+      // Validation
       if (param === 'sign' && !reason) {
-        Swal.fire(
-          'Validation Error',
-          'Please fill in the reason field.',
-          'error'
-        );
+        await showAlertDialog({
+          title: 'Validation Error',
+          description: 'Please fill in the reason field.',
+          variant: 'destructive',
+        });
         return;
       }
       if (param === 'send' && !recipient) {
-        Swal.fire(
-          'Validation Error',
-          'Please provide recipient and description.',
-          'error'
-        );
+        await showAlertDialog({
+          title: 'Validation Error',
+          description: 'Please provide recipient and description.',
+          variant: 'destructive',
+        });
         return;
       }
-
       try {
         const formData = new FormData();
-
         if (file) formData.append('Document', file);
         if (reason) formData.append('Reason', reason);
         if (recipient) formData.append('SendToNpp', recipient);
         const x = positionSign.x + 65;
         const y = pdfRenderedSize.height - positionSign.y - sigSize.h - 240;
-
         const width = sigSize.w;
-
         if (param === 'sign') {
           formData.append('Xloc', Math.round(x).toString());
           formData.append('Yloc', Math.round(y).toString());
@@ -151,19 +148,20 @@ export default function PdfPage() {
         } else {
           formData.append('IsDraft', param === 'draft' ? 'true' : 'false');
         }
-
         const response = await apiService.signCertified(formData);
-
-        Swal.fire(
-          'Success',
-          response.data.data.message || 'Operation completed',
-          'success'
-        ).then(() => {
-          router.push('/documents');
+        await showAlertDialog({
+          title: 'Success',
+          description: response.data.data.message || 'Operation completed.',
+          variant: 'success',
         });
+        router.push('/documents');
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+        await showAlertDialog({
+          title: 'Error',
+          description: 'Something went wrong. Please try again.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error during submission:', error);
@@ -182,7 +180,6 @@ export default function PdfPage() {
       isCreate
     >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* PDF Viewer */}
         <div className="md:col-span-7 col-span-12 relative p-4 min-h-[calc(100vh-100px)] bg-gray-200">
           {fileBuffer ? (
             <>
@@ -312,9 +309,21 @@ export default function PdfPage() {
               </div>
             )}
             {isUploaded && (
+              <Button
+                className="mr-3"
+                variant="outline"
+                onClick={() => {
+                  handleSubmit('draft');
+                }}
+              >
+                Draft
+              </Button>
+            )}
+            {isUploaded && (
               <>
                 {showSignatureBox ? (
                   <Button
+                    disabled={reason.length === 0} // disable if no reason provided
                     variant="default"
                     onClick={() => {
                       handleSubmit('sign');
@@ -324,6 +333,7 @@ export default function PdfPage() {
                   </Button>
                 ) : (
                   <Button
+                    disabled={reason.length === 0 || recipient.length === 0}
                     variant="default"
                     onClick={() => {
                       handleSubmit('send');
@@ -334,21 +344,12 @@ export default function PdfPage() {
                 )}
               </>
             )}
-
-            {isUploaded && (
-              <Button
-                className="ml-3"
-                variant="default"
-                onClick={() => {
-                  handleSubmit('draft');
-                }}
-              >
-                Draft
-              </Button>
-            )}
           </div>
         </div>
       </div>
+
+      {ConfirmDialog}
+      {AlertDialog}
       {isLoading && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2 bg-white p-6 rounded-xl shadow-lg">
