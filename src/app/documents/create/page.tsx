@@ -10,12 +10,12 @@ import { AppLayout } from '@/components';
 import { Services } from '@/services/serviceapi';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import InputDropdown from '@/components/ui/input-dropdown';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useAlertDialog } from '@/hooks/useAlertDialog';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
   ssr: false,
@@ -30,6 +30,7 @@ type Pegawai = {
 
 export default function PdfPage() {
   const router = useRouter();
+  const { showLoading, hideLoading } = useLoadingOverlay();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
   const { showAlertDialog, AlertDialog } = useAlertDialog();
   const apiService = new Services(); // ✅ Create an instance
@@ -37,8 +38,6 @@ export default function PdfPage() {
   const [file, setFile] = useState<File | null>(null);
   const [pegawai, setPegawai] = useState([]);
   const [isUploaded, setIsUploaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  // PDF States
   const [currentPage, setCurrentPage] = useState(0);
   const [numPages, setNumPages] = useState(0);
   const [pdfRenderedSize, setPdfRenderedSize] = useState({
@@ -65,7 +64,7 @@ export default function PdfPage() {
     }
 
     try {
-      setIsLoading(true);
+      showLoading();
       const buffer = await selectedFile.arrayBuffer();
       console.log('buffer', buffer);
       setFileBuffer(buffer);
@@ -74,7 +73,7 @@ export default function PdfPage() {
     } catch (error) {
       console.error('Error uploading file:', error);
     } finally {
-      setIsLoading(false);
+      hideLoading();
     }
   };
 
@@ -113,7 +112,7 @@ export default function PdfPage() {
         confirmText: `Yes, ${param}!`,
       });
       if (!confirmed) return;
-      setIsLoading(true);
+      showLoading();
       // Validation
       if (param === 'sign' && !reason) {
         await showAlertDialog({
@@ -166,7 +165,7 @@ export default function PdfPage() {
     } catch (error) {
       console.error('Error during submission:', error);
     } finally {
-      setIsLoading(false);
+      hideLoading();
     }
   }
 
@@ -350,14 +349,6 @@ export default function PdfPage() {
 
       {ConfirmDialog}
       {AlertDialog}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2 bg-white p-6 rounded-xl shadow-lg">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Memproses data...</p>
-          </div>
-        </div>
-      )}
     </AppLayout>
   );
 }

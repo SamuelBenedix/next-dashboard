@@ -1,4 +1,5 @@
 import './globals.css';
+import { LoadingProvider } from '@/hooks/useLoadingOverlay';
 
 export const metadata = {
   title: 'Sign Plus',
@@ -12,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <LoadingProvider>
+        <body>{children}</body>
+      </LoadingProvider>
     </html>
   );
 }
