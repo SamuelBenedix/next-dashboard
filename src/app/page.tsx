@@ -12,6 +12,7 @@ import { uploadModifyToService } from '@/utils/uploadModifyToService';
 import { Services } from '@/services/serviceapi';
 import { PenTool } from 'lucide-react';
 import Header from '@/components/header';
+import { useLoadingOverlay } from '@/hooks/useLoadingOverlay';
 
 const apiService = new Services();
 const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
@@ -25,6 +26,7 @@ export default function PdfPage() {
   );
   const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
   const [uploadedSigImage, setUploadedSigImage] = useState<string | null>(null);
+  const { showLoading, hideLoading } = useLoadingOverlay();
   const [positionSign, setPositionSign] = useState({ x: 0, y: 0 });
   const [sigSize, setSigSize] = useState({ w: 100, h: 50 });
   const [showSignatureModal, setShowSignatureModal] = useState(false);
@@ -36,17 +38,13 @@ export default function PdfPage() {
     width: 0,
     height: 0,
   });
-  const [pdfOriginalSize, setPdfOriginalSize] = useState({
-    width: 0,
-    height: 0,
-  });
+
   const [currentPage, setCurrentPage] = useState(0);
   const [numPages, setNumPages] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  console.log('pdfRenderedSize', pdfRenderedSize);
-  console.log('pdfOriginalSize', pdfOriginalSize);
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    showLoading();
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -69,6 +67,7 @@ export default function PdfPage() {
 
     setFileBuffer(buffer);
     setUploadedSigImage(null);
+    hideLoading();
   };
 
   const handleButtonClick = () => {
@@ -78,6 +77,7 @@ export default function PdfPage() {
   const downloadPDFbyID = async (
     updateProgress: (progress: number) => void
   ) => {
+    showLoading();
     const getUploadID = localStorage.getItem('IdUpload');
 
     const currentDate = new Date();
@@ -106,6 +106,8 @@ export default function PdfPage() {
     } catch (error) {
       console.error('Error downloading file:', error);
       throw error;
+    } finally {
+      hideLoading();
     }
   };
 
@@ -131,6 +133,7 @@ export default function PdfPage() {
       return;
     }
 
+    showLoading();
     setLoading(true);
     try {
       // Hitung skala dari tampilan ke ukuran asli PDF
@@ -163,6 +166,7 @@ export default function PdfPage() {
       alert('Gagal mengunggah PDF');
     } finally {
       setLoading(false);
+      hideLoading();
     }
   };
 
@@ -248,9 +252,7 @@ export default function PdfPage() {
                   onPageSize={(size) => {
                     setPdfRenderedSize(size);
                   }}
-                  onRenderScaleChange={(scale, w, h) => {
-                    setPdfOriginalSize({ width: w, height: h });
-                  }}
+                  onRenderScaleChange={() => {}}
                   signatureURL={uploadedSigImage}
                   position={positionSign}
                   sigSize={sigSize}
