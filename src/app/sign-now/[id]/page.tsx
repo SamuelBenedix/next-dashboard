@@ -64,7 +64,7 @@ export default function SignNowPage() {
         console.log('error', error);
         await showAlertDialog({
           title: 'Error',
-          description: 'Gagal Memuat Documetn',
+          description: 'Gagal Memuat Document',
           variant: 'destructive',
         });
       } finally {
