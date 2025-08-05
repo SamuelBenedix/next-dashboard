@@ -27,6 +27,8 @@ interface PDFRendererProps {
 
   sigSize: { w: number; h: number };
 
+  docSize?: number;
+
   // These are not actually used by PDFRenderer itself, but passed through for clarity
 
   onStartDrag?: (e: React.MouseEvent) => void;
@@ -60,19 +62,30 @@ export default function PDFRenderer({
   // as the overlay is now solely managed by PdfPage.tsx
 
   onPageSize,
+  docSize,
 }: PDFRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(600);
+  const [containerWidth, setContainerWidth] = useState<number>(600);
 
   useEffect(() => {
     const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
+      const width = window.innerWidth;
+
+      if (width < 768) {
+        // Mobile
+        setContainerWidth(width - 50);
+      } else if (width >= 768 && width <= 1024) {
+        // Tablet
+        setContainerWidth(500);
+      } else {
+        // Desktop
+        setContainerWidth(docSize || 600); // Atur sesuai kebutuhan
       }
     };
 
-    updateWidth();
+    updateWidth(); // Jalankan sekali saat komponen dimount
     window.addEventListener('resize', updateWidth);
+
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
@@ -107,22 +120,20 @@ export default function PDFRenderer({
   };
 
   return (
-    <Document file={fileBuffer} onLoadSuccess={handleLoadSuccess}>
-      <Page
-        pageNumber={currentPage + 1}
-        width={containerWidth} // This forces the PDF to render at 800px width in the browser
-        onLoadSuccess={handlePageLoadSuccess} // Use this callback to get actual scale
-        renderAnnotationLayer={false} // Disable default layers to prevent double rendering if overlay is custom
-        renderTextLayer={false} // Disable default layers
-      />
-
-      {/*
-
-The signature image and its resize handle are now managed entirely by the
-
-PdfPage component as an absolute overlay. So, this part is removed from here.
-
-*/}
-    </Document>
+    <div ref={containerRef} className="w-full">
+      <Document
+        file={fileBuffer}
+        onLoadSuccess={handleLoadSuccess}
+        loading={<p>Loading PDF...</p>}
+      >
+        <Page
+          pageNumber={currentPage + 1}
+          width={containerWidth} // This forces the PDF to render at 800px width in the browser
+          onLoadSuccess={handlePageLoadSuccess} // Use this callback to get actual scale
+          renderAnnotationLayer={false} // Disable default layers to prevent double rendering if overlay is custom
+          renderTextLayer={false} // Disable default layers
+        />
+      </Document>
+    </div>
   );
 }

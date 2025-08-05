@@ -6,9 +6,12 @@ import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { useRouter } from 'next/navigation'; // tambahkan di atas
+interface HeaderTypes {
+  isLogin?: boolean; // Optional prop to indicate if this is a create page
+}
 
 // Di dalam komponen Header
-export default function Header() {
+export default function Header({ isLogin = true }: HeaderTypes) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -20,16 +23,17 @@ export default function Header() {
           <img src="/BNI_logo.svg" alt="e-Signature Logo" className="h-8" />
         </div>
 
-        {/* Desktop: Login button */}
-        <div className="hidden sm:block">
-          <Button
-            variant="outline"
-            className="text-sm"
-            onClick={() => router.push('/login')}
-          >
-            Login
-          </Button>
-        </div>
+        {isLogin && (
+          <div className="hidden sm:block">
+            <Button
+              variant="outline"
+              className="text-sm"
+              onClick={() => router.push('/login')}
+            >
+              Login
+            </Button>
+          </div>
+        )}
 
         {/* Mobile: Menu Button */}
         <div className="sm:hidden">
@@ -39,17 +43,19 @@ export default function Header() {
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <div className="mt-4 space-y-4">
-                <Button
-                  variant="outline"
-                  className="text-sm"
-                  onClick={() => router.push('/login')}
-                >
-                  Login
-                </Button>
-              </div>
-            </SheetContent>
+            {isLogin && (
+              <SheetContent side="right" className="w-64">
+                <div className="mt-4 space-y-4">
+                  <Button
+                    variant="outline"
+                    className="text-sm"
+                    onClick={() => router.push('/login')}
+                  >
+                    Login
+                  </Button>
+                </div>
+              </SheetContent>
+            )}
           </Sheet>
         </div>
       </div>
