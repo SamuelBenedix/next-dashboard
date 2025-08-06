@@ -22,12 +22,13 @@ const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
 
 export default function SignNowPage() {
   const router = useRouter();
-  const { id } = useParams();
+  const { id, token } = useParams();
   const apiService = new Services();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
   const { showAlertDialog, AlertDialog } = useAlertDialog();
   const { showLoading, hideLoading } = useLoadingOverlay();
   const docId = typeof id === 'string' ? id : '';
+  const tokenJwt = typeof token === 'string' ? token : '';
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -44,6 +45,8 @@ export default function SignNowPage() {
   const [sigSize, setSigSize] = useState({ w: 100, h: 100 });
   const [file, setFile] = useState<File | null>(null);
 
+  console.log('token', token);
+
   useEffect(() => {
     if (!docId) return;
 
@@ -52,7 +55,7 @@ export default function SignNowPage() {
       try {
         const formData = new FormData();
         formData.append('idFile', docId);
-        const response = await apiService.downloadCertified(formData);
+        const response = await apiService.downloadCertified(formData, tokenJwt);
         const arrayBuffer = response.data;
         const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
         const file = new File([blob], 'document.pdf', {

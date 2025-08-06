@@ -103,20 +103,24 @@ export class Services {
       return err
     }
   }
-
-  async getListPegawai() {
+  async getListPegawai(token?: string) {
     const url = `${API_URL_DEV}SignPlus_UserManagement/api/Account/ListPegawai`
+
+    // Utamakan token dari parameter
+    const finalToken = token?.trim() || localStorage.getItem('jwT_Token')
+
     const options = {
       headers: {
         ...defaultOptions.headers,
-        Authorization: 'Bearer ' + localStorage.getItem('jwT_Token'),
+        Authorization: 'Bearer ' + finalToken,
       },
     }
+
     try {
       const response = await axios.get(url, options)
       return response.data
     } catch (error) {
-      console.error('Error uploading file:', error)
+      console.error('Error getting list pegawai:', error)
       throw error
     }
   }
@@ -171,6 +175,8 @@ export class Services {
 
   async downloadFile(param: any): Promise<Blob> {
     const url = `${API_URL_DEV}SignPlus_DigitalSignatureNonCertified/api/NonCertified/download`
+
+
     const options = {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -225,12 +231,14 @@ export class Services {
     }
   }
 
-  async downloadCertified(param: any): Promise<AxiosResponse<ArrayBuffer>> {
+  async downloadCertified(param: any, token: string): Promise<AxiosResponse<ArrayBuffer>> {
     const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DownloadFile`;
+
+    const finalToken = token?.trim() || localStorage.getItem('jwT_Token')
 
     const options: AxiosRequestConfig = {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('jwT_Token'),
+        Authorization: 'Bearer ' + finalToken,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       responseType: 'arraybuffer', // ✅ Needed for react-pdf
