@@ -258,11 +258,16 @@ export class Services {
     }
   }
 
-  async signCertified(param: any): Promise<any> {
+  async signCertified(param: any, token?: string): Promise<any> {
     const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DigitalSign`
+    // Utamakan token dari parameter
+    const finalToken = token?.trim() ? token?.trim() : localStorage.getItem('jwT_Token')
+
+    console.log('finalToken', finalToken)
+
     const options = {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('jwT_Token'),
+        Authorization: 'Bearer ' + finalToken,
       },
     }
     try {

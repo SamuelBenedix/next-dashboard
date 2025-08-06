@@ -23,6 +23,7 @@ const PDFRenderer = dynamic(() => import('@/components/ui/PdfRenderer'), {
 export default function SignNowPage() {
   const router = useRouter();
   const { id, token } = useParams();
+
   const apiService = new Services();
   const { showConfirmDialog, ConfirmDialog } = useConfirmDialog();
   const { showAlertDialog, AlertDialog } = useAlertDialog();
@@ -130,7 +131,7 @@ export default function SignNowPage() {
 
     try {
       showLoading();
-      const response = await apiService.signCertified(formData);
+      const response = await apiService.signCertified(formData, tokenJwt);
       await showAlertDialog({
         title: 'Success',
         description: response.data.data.message || 'Operation completed.',
