@@ -90,7 +90,7 @@ export default function DataPage() {
 
   const signNow = (id: number) => {
     if (!id) return;
-    router.push(`/signnow/${id}`);
+    router.push(`/sign-now/${id}`);
   };
 
   const download = async (id: number, fileName: string) => {
