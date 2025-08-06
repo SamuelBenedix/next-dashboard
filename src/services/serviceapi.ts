@@ -109,6 +109,8 @@ export class Services {
     // Utamakan token dari parameter
     const finalToken = token?.trim() ? token?.trim() : localStorage.getItem('jwT_Token')
 
+    console.log('finalToken', finalToken)
+
     const options = {
       headers: {
         ...defaultOptions.headers,
@@ -235,6 +237,8 @@ export class Services {
     const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DownloadFile`;
 
     const finalToken = token?.trim() ? token?.trim() : localStorage.getItem('jwT_Token')
+
+    console.log('finalToken', finalToken)
 
 
     const options: AxiosRequestConfig = {
