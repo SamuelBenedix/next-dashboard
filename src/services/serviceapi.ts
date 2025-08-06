@@ -233,7 +233,7 @@ export class Services {
     }
   }
 
-  async downloadCertified(param: any, token: string): Promise<AxiosResponse<ArrayBuffer>> {
+  async downloadCertified(param: any, token?: string): Promise<AxiosResponse<ArrayBuffer>> {
     const url = `${API_URL_DEV}SignPlus_DigitalSignatureCertified/api/Signature/DownloadFile`;
 
     const finalToken = token?.trim() ? token?.trim() : localStorage.getItem('jwT_Token')
